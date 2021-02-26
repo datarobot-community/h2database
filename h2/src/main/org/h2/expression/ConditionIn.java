@@ -43,14 +43,14 @@ public class ConditionIn extends Condition {
     @Override
     public Value getValue(Session session) {
         Value l = left.getValue(session);
-        if (l == ValueNull.INSTANCE) {
+        if (l == ValueNull.INSTANCE && !session.getDatabase().getMode().disableThreeWayLogic) {
             return l;
         }
         boolean result = false;
         boolean hasNull = false;
         for (Expression e : valueList) {
             Value r = e.getValue(session);
-            if (r == ValueNull.INSTANCE) {
+            if (r == ValueNull.INSTANCE && !session.getDatabase().getMode().disableThreeWayLogic) {
                 hasNull = true;
             } else {
                 r = r.convertTo(l.getType());
@@ -60,7 +60,7 @@ public class ConditionIn extends Condition {
                 }
             }
         }
-        if (!result && hasNull) {
+        if (!result && hasNull && !session.getDatabase().getMode().disableThreeWayLogic) {
             return ValueNull.INSTANCE;
         }
         return ValueBoolean.get(result);
@@ -79,7 +79,7 @@ public class ConditionIn extends Condition {
     public Expression optimize(Session session) {
         left = left.optimize(session);
         boolean constant = left.isConstant();
-        if (constant && left == ValueExpression.getNull()) {
+        if (constant && left == ValueExpression.getNull() && !session.getDatabase().getMode().disableThreeWayLogic) {
             return left;
         }
         boolean allValuesConstant = true;
@@ -105,7 +105,11 @@ public class ConditionIn extends Condition {
         }
         if (size == 1) {
             Expression right = valueList.get(0);
-            Expression expr = new Comparison(session, Comparison.EQUAL, left, right);
+            Expression expr =
+                    session.getDatabase().getMode().disableThreeWayLogic &&
+                            right.isConstant() && right.getValue(session) == ValueNull.INSTANCE ?
+                            new Comparison(session, Comparison.IS_NULL, left, null) :
+                            new Comparison(session, Comparison.EQUAL, left, right);
             expr = expr.optimize(session);
             return expr;
         }

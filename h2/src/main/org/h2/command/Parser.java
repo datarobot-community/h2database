@@ -33,6 +33,7 @@ import org.h2.command.ddl.AlterView;
 import org.h2.command.ddl.Analyze;
 import org.h2.command.ddl.CreateAggregate;
 import org.h2.command.ddl.CreateConstant;
+import org.h2.command.ddl.CreateConversion;
 import org.h2.command.ddl.CreateFunctionAlias;
 import org.h2.command.ddl.CreateIndex;
 import org.h2.command.ddl.CreateLinkedTable;
@@ -113,6 +114,7 @@ import org.h2.expression.Function;
 import org.h2.expression.FunctionCall;
 import org.h2.expression.JavaAggregate;
 import org.h2.expression.JavaFunction;
+import org.h2.expression.FunctionInfo;
 import org.h2.expression.Operation;
 import org.h2.expression.Parameter;
 import org.h2.expression.Rownum;
@@ -148,12 +150,16 @@ import org.h2.value.ValueBytes;
 import org.h2.value.ValueDate;
 import org.h2.value.ValueDecimal;
 import org.h2.value.ValueEnum;
+import org.h2.value.ValueDouble;
 import org.h2.value.ValueInt;
 import org.h2.value.ValueLong;
 import org.h2.value.ValueNull;
 import org.h2.value.ValueString;
 import org.h2.value.ValueTime;
 import org.h2.value.ValueTimestamp;
+
+import org.h2.command.dml.GroupBy;
+import org.h2.expression.CalculatedAlias;
 
 /**
  * The parser is used to convert a SQL statement string to an command object.
@@ -226,9 +232,17 @@ public class Parser {
     private int orderInFrom;
     private ArrayList<Parameter> suppliedParameterList;
 
+    /**
+     * @see org.h2.engine.DbSettings#mixedCase
+     */
+    private final boolean mixedCase;
+    private String currentTokenMixedCase;
+    private String columnNameMixedCase;
+
     public Parser(Session session) {
         this.database = session.getDatabase();
         this.identifiersToUpper = database.getSettings().databaseToUpper;
+        this.mixedCase = database.getSettings().mixedCase;
         this.session = session;
     }
 
@@ -397,6 +411,8 @@ public class Parser {
             case 'F':
                 if (isToken("FROM")) {
                     c = parseSelect();
+                } else if (readIf("FLUSH")) {
+                    c = parseFlush();
                 }
                 break;
             case 'g':
@@ -584,6 +600,16 @@ public class Parser {
         readIf("WORK");
         return command;
     }
+
+    private TransactionCommand parseFlush() {
+        TransactionCommand command;
+        if (readIf("SCHEMAS")) {
+        }
+        command = new TransactionCommand(session, CommandInterface.FLUSH_SCHEMAS);
+        return command;
+
+    }
+
 
     private TransactionCommand parseShutdown() {
         int type = CommandInterface.SHUTDOWN;
@@ -1190,6 +1216,7 @@ public class Parser {
                 Query query = parseSelectUnion();
                 read(")");
                 query.setParameterList(New.arrayList(parameters));
+                query.setRemoveDuplicateColumns(true);
                 query.init();
                 Session s;
                 if (createView != null) {
@@ -1739,6 +1766,10 @@ public class Parser {
     }
 
     private Query parseSelect() {
+        return parseSelect(false);
+    }
+
+    private Query parseSelect(boolean removeDuplicateColumns) {
         int paramIndex = parameters.size();
         Query command = parseSelectUnion();
         ArrayList<Parameter> params = New.arrayList();
@@ -1746,6 +1777,7 @@ public class Parser {
             params.add(parameters.get(i));
         }
         command.setParameterList(params);
+        command.setRemoveDuplicateColumns(removeDuplicateColumns);
         command.init();
         return command;
     }
@@ -2051,11 +2083,18 @@ public class Parser {
                 expressions.add(new Wildcard(null, null));
             } else {
                 Expression expr = readExpression();
+                String ex = readExtensionIf();
                 if (readIf("AS") || currentTokenType == IDENTIFIER) {
                     String alias = readAliasIdentifier();
+                    String mixed = columnNameMixedCase;
                     boolean aliasColumnName = database.getSettings().aliasColumnName;
                     aliasColumnName |= database.getMode().aliasColumnName;
-                    expr = new Alias(expr, alias, aliasColumnName);
+                    Alias a = new Alias(expr, alias, mixed, aliasColumnName);
+                    expr = a;
+                    a.setExtension(readExtensionIf());
+                }
+                else {
+                    expr.setExtension(ex);
                 }
                 expressions.add(expr);
             }
@@ -2105,10 +2144,16 @@ public class Parser {
         if (readIf("GROUP")) {
             read("BY");
             command.setGroupQuery();
-            ArrayList<Expression> list = New.arrayList();
+            ArrayList<GroupBy> list = New.arrayList();
             do {
                 Expression expr = readExpression();
-                list.add(expr);
+                if (database.getMode().groupByInteger && expr instanceof ValueExpression &&
+                        expr.getType() == Value.INT) {
+                    int index = expr.getValue(null).getInt();
+                    list.add(new GroupBy(index));
+                }
+                else
+                    list.add(new GroupBy(expr));
             } while (readIf(","));
             command.setGroupBy(list);
         }
@@ -2853,6 +2898,11 @@ public class Parser {
             }
             break;
         case IDENTIFIER:
+            if (database.getMode().calculatedAlias && readIf("CALCULATED")) {
+                r = new CalculatedAlias(currentToken);
+                read();
+                break;
+            }
             String name = currentToken;
             if (currentTokenQuoted) {
                 read();
@@ -3248,6 +3298,7 @@ public class Parser {
                     "identifier");
         }
         String s = currentToken;
+        columnNameMixedCase=mixedCase ? currentTokenMixedCase:null;
         read();
         return s;
     }
@@ -3298,6 +3349,7 @@ public class Parser {
 
     private void read() {
         currentTokenQuoted = false;
+        currentTokenMixedCase = null;
         if (expectedList != null) {
             expectedList.clear();
         }
@@ -3321,6 +3373,8 @@ public class Parser {
                 }
                 i++;
             }
+            currentTokenMixedCase = StringUtils.cache(originalSQL.substring(
+                    start, i));
             currentToken = StringUtils.cache(sqlCommand.substring(
                     start, i));
             currentTokenType = getTokenType(currentToken);
@@ -3364,13 +3418,14 @@ public class Parser {
             parseIndex = i;
             return;
         case CHAR_VALUE:
-            if (c == '0' && chars[i] == 'X') {
+            if (c == '0' && chars[i] == 'X' || chars[i] == 'x'  ) {
                 // hex number
                 long number = 0;
                 start += 2;
                 i++;
                 while (true) {
                     c = chars[i];
+                    c=Character.toUpperCase(c);
                     if ((c < '0' || c > '9') && (c < 'A' || c > 'F')) {
                         checkLiterals(false);
                         currentValue = ValueInt.get((int) number);
@@ -3391,6 +3446,7 @@ public class Parser {
             long number = c - '0';
             while (true) {
                 c = chars[i];
+                c=Character.toUpperCase(c);
                 if (c < '0' || c > '9') {
                     if (c == '.' || c == 'E' || c == 'L') {
                         readDecimal(start, i);
@@ -3486,6 +3542,7 @@ public class Parser {
         char c;
         do {
             c = chars[++i];
+            c = Character.toUpperCase(c);
         } while ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F'));
         parseIndex = i;
         String sub = sqlCommand.substring(start, i);
@@ -3541,7 +3598,7 @@ public class Parser {
         } catch (NumberFormatException e) {
             throw DbException.get(ErrorCode.DATA_CONVERSION_ERROR_1, e, sub);
         }
-        currentValue = ValueDecimal.get(bd);
+        currentValue = database.getMode().decimalConstantAsDouble ? ValueDouble.get(bd.doubleValue()) : ValueDecimal.get(bd);
         currentTokenType = VALUE;
     }
 
@@ -3884,6 +3941,8 @@ public class Parser {
 
     private static int getSaveTokenType(String s, boolean supportOffsetFetch) {
         switch (s.charAt(0)) {
+        case 'A':
+            return getKeywordOrIdentifier(s, "ALL", KEYWORD);
         case 'C':
             if (s.equals("CHECK")) {
                 return KEYWORD;
@@ -3963,6 +4022,8 @@ public class Parser {
         case 'T':
             if ("TODAY".equals(s)) {
                 return CURRENT_DATE;
+            } else if (s.equals("TOP")) {
+                return KEYWORD;
             }
             return getKeywordOrIdentifier(s, "TRUE", TRUE);
         case 'U':
@@ -3990,6 +4051,7 @@ public class Parser {
 
     private Column parseColumnForTable(String columnName,
             boolean defaultNullable) {
+        String mixedCaseName=columnNameMixedCase;
         Column column;
         boolean isIdentity = false;
         if (readIf("IDENTITY") || readIf("BIGSERIAL")) {
@@ -4089,6 +4151,8 @@ public class Parser {
         if (comment != null) {
             column.setComment(comment);
         }
+        column.setExtension(readExtensionIf());
+        column.setMixedCaseName(mixedCaseName);
         return column;
     }
 
@@ -4110,6 +4174,13 @@ public class Parser {
             return readString();
         }
         return null;
+    }
+
+    private String readExtensionIf() {
+        if (readIf("EXTENSION")) {
+            return readString();
+        } else
+            return null;
     }
 
     private Column parseColumnWithType(String columnName) {
@@ -4293,7 +4364,9 @@ public class Parser {
         if (readIf("VIEW")) {
             return parseCreateView(force, orReplace);
         } else if (readIf("ALIAS")) {
-            return parseCreateFunctionAlias(force);
+             return parseCreateFunctionAlias(force);
+        } else if (readIf("CONVERSION")) {
+            return parseCreateConversion();
         } else if (readIf("SEQUENCE")) {
             return parseCreateSequence();
         } else if (readIf("USER")) {
@@ -4303,7 +4376,7 @@ public class Parser {
         } else if (readIf("ROLE")) {
             return parseCreateRole();
         } else if (readIf("SCHEMA")) {
-            return parseCreateSchema();
+            return parseCreateSchema(force);
         } else if (readIf("CONSTANT")) {
             return parseCreateConstant();
         } else if (readIf("DOMAIN")) {
@@ -4600,8 +4673,8 @@ public class Parser {
         return command;
     }
 
-    private CreateSchema parseCreateSchema() {
-        CreateSchema command = new CreateSchema(session);
+    private CreateSchema parseCreateSchema(boolean force) {
+        CreateSchema command = new CreateSchema(session,force);
         command.setIfNotExists(readIfNotExists());
         command.setSchemaName(readUniqueIdentifier());
         if (readIf("AUTHORIZATION")) {
@@ -4611,6 +4684,21 @@ public class Parser {
         }
         if (readIf("WITH")) {
             command.setTableEngineParams(readTableEngineParams());
+        }
+        if(readIf("EXTERNAL")) {
+            read("(");
+            command.setExternal(readString());
+            read(",");
+            command.setExternalParameters(readString());
+            read(")");
+        }
+        else if(readIf("LINKED")) {
+            read("(");
+            String externalConnectionName=readString();
+            read(",");
+            String original =readString();
+            command.setLinked(externalConnectionName,original);
+            read(")");
         }
         return command;
     }
@@ -4852,6 +4940,33 @@ public class Parser {
             read("FOR");
             command.setJavaClassMethod(readUniqueIdentifier());
         }
+        if (readIf("PRECISION")) {
+            read("(");
+
+            int method ;
+            long precision = 0;
+            if (readIf("ARG")) {
+                method = FunctionInfo.ARG;
+                if (readIf(",")) {
+                    // default value 1 stands for the first argument
+                    precision = readLong()-1;
+                }
+            } else if (readIf("FIXED")) {
+                method = FunctionInfo.FIXED;
+                if (readIf(",")) {
+                    precision = readLong();
+                }
+            } else if (readIf("SUM")) {
+                method = FunctionInfo.SUM;
+            }
+            else {
+                //TODO, throw the correct exception here
+                throw new IllegalArgumentException();
+            }
+
+            read(")");
+            command.setPrecision(method,precision);
+        }
         return command;
     }
 
@@ -4949,6 +5064,51 @@ public class Parser {
         view.setOnCommitDrop(true);
         return view;
     }
+
+    private CreateConversion parseCreateConversion()  {
+        CreateConversion command = new CreateConversion(session);
+        String from=currentToken;
+        if(readIf("LONG")) {
+            if(readIf("RAW")) {
+                from += " RAW";
+            }
+        } else if(readIf("DOUBLE")) {
+            if(readIf("PRECISION")) {
+                from += " PRECISION";
+            }
+        } else if(readIf("CHARACTER")) {
+            if(readIf("VARYING")) {
+                from += " VARYING";
+            }
+        } else {
+            read();
+        }
+        read (",");
+        String to=currentToken;
+        if(readIf("LONG")) {
+            if(readIf("RAW")) {
+                to += " RAW";
+            }
+        } else if(readIf("DOUBLE")) {
+            if(readIf("PRECISION")) {
+                to += " PRECISION";
+            }
+        } else if(readIf("CHARACTER")) {
+            if(readIf("VARYING")) {
+                to += " VARYING";
+            }
+        } else {
+            read();
+        }
+        read (",");
+        DataType fromDataType = DataType.getTypeByName(from);
+        DataType toDataType = DataType.getTypeByName(to);
+        command.setFromDataType(fromDataType.type);
+        command.setToDataType(toDataType.type);
+        command.setJavaClass(readString());
+        return command;
+    }
+
 
     private CreateView parseCreateView(boolean force, boolean orReplace) {
         boolean ifNotExists = readIfNotExists();
@@ -6090,24 +6250,39 @@ public class Parser {
 
     private CreateLinkedTable parseCreateLinkedTable(boolean temp,
             boolean globalTemp, boolean force) {
-        read("TABLE");
+        boolean view =false;
+        if (readIf("VIEW")) {
+            view=true;
+        } else
+            read("TABLE");
         boolean ifNotExists = readIfNotExists();
         String tableName = readIdentifierWithSchema();
-        CreateLinkedTable command = new CreateLinkedTable(session, getSchema());
+        CreateLinkedTable command = new CreateLinkedTable(session, getSchema(), view);
         command.setTemporary(temp);
         command.setGlobalTemporary(globalTemp);
         command.setForce(force);
         command.setIfNotExists(ifNotExists);
         command.setTableName(tableName);
         command.setComment(readCommentIf());
+        boolean externalConnection=false;
+        if (readIf("WITH")) {
+            externalConnection = true;
+            read("EXTERNAL");
+            read("CONNECTION");
+        }
         read("(");
-        command.setDriver(readString());
-        read(",");
-        command.setUrl(readString());
-        read(",");
-        command.setUser(readString());
-        read(",");
-        command.setPassword(readString());
+        if (externalConnection) {
+            command.setExternalConnectionName(readString());
+        }
+        else {
+            command.setDriver(readString());
+            read(",");
+            command.setUrl(readString());
+            read(",");
+            command.setUser(readString());
+            read(",");
+            command.setPassword(readString());
+        }
         read(",");
         String originalTable = readString();
         if (readIf(",")) {
@@ -6143,6 +6318,7 @@ public class Parser {
         command.setIfNotExists(ifNotExists);
         command.setTableName(tableName);
         command.setComment(readCommentIf());
+        boolean removeDuplicateColumns = true;
         if (readIf("(")) {
             if (!readIf(")")) {
                 do {
@@ -6165,6 +6341,7 @@ public class Parser {
                             command.addConstraintCommand(pk);
                         }
                         command.addColumn(column);
+                        removeDuplicateColumns=false;
                         String constraintName = null;
                         if (readIf("CONSTRAINT")) {
                             constraintName = readColumnIdentifier();
@@ -6304,7 +6481,7 @@ public class Parser {
             if (readIf("SORTED")) {
                 command.setSortedInsertMode(true);
             }
-            command.setQuery(parseSelect());
+            command.setQuery(parseSelect(removeDuplicateColumns));
         }
         // for MySQL compatibility
         if (readIf("ROW_FORMAT")) {

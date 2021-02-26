@@ -663,7 +663,7 @@ public class ScriptCommand extends ScriptBase {
         }
         if (tables != null) {
             // if filtering on specific tables, only include those schemas
-            for (Table table : schema.getAllTablesAndViews()) {
+            for (Table table : schema.getAllTablesAndViews(session, false)) {
                 if (tables.contains(table)) {
                     return false;
                 }

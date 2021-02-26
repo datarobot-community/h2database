@@ -585,4 +585,49 @@ public class SysProperties {
         return Utils.scaleForAvailableMemory(defaultValue);
     }
 
+    /**
+     * System property <code>h2.replaceNullWithNan</code> (default: false).<br />
+     * For user defined function:
+     * Input argument: pass NULL as Double.NaN and Float.NaN for double and float
+     * Return value: convert Double.NaN to NULL.
+     * <p>
+     * not compatible with ANSI
+     */
+    public static final boolean DOUBLE_NAN_SAME_AS_NULL = Utils.getProperty("h2.doubleNanSameAsNull", false);
+
+    /**
+     * Remove duplicate column names from the resulting table
+     * <p>
+     * not compatible with ANSI
+     */
+    public static final boolean REMOVE_DUPLICATE_NAME_ON_CREATE_TABLE_AS = Utils.getProperty("h2.removeDuplicateNameOnCreateTableAs", false);
+
+    /**
+     * System property <code>h2.useDateAddExtended</code> (default: false).<br />
+     * operations day+1 in interpreted as next day, not as add 1 second to the midnight of the current day
+     * <p>
+     * Similar to MSSQL function DATEADD,
+     * H2 follows Oracle here
+     * DB2 required for + operation to explicitly specify type of the added interval
+     */
+    public static final boolean DATE_ADD_EXTENDED = Utils.getProperty("h2.dateAddExtended", false);
+
+    /**
+     * System property <code>h2.disableGeometry</code> (default: false).<br />
+     * disable attempt to try to load Geometry class saving on one DBException while debugging
+     */
+    public static final boolean DISABLE_GEOMETRY = Utils.getProperty("h2.disableGeometry", false);
+
+    /**
+     * System property <code>h2.dateTimeDivideAsDouble</code> (default: false).<br />
+     * Division operations involving date/time produce double to avoid precision loss
+     */
+    public static final boolean DATE_TIME_DIVIDE_AS_DOUBLE = Utils.getProperty("h2.dateTimeDivideAsDouble", false);
+
+    /**
+     * System property <code>h2.</code> (default: false).<br />
+     * Skip over NaN and Infinite for aggregate calculations
+     */
+    public static final boolean AGGREGATE_IGNORE_NAN_INFINITE = Utils.getProperty("h2.aggregateIgnoreNanInfinite", false);
+
 }

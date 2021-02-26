@@ -202,6 +202,7 @@ public abstract class Command implements CommandInterface {
                         callStop = !result.isLazy();
                         return result;
                     } catch (DbException e) {
+                        e = e.addSQL(sql);
                         start = filterConcurrentUpdate(e, start);
                     } catch (OutOfMemoryError e) {
                         callStop = false;

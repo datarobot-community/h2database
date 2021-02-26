@@ -1996,6 +1996,53 @@ public class ErrorCode {
 
     // next are 90110, 90122, 90144
 
+    /**
+     * The error with code <code>90122</code> is thrown when
+     * trying to altering, adding or dropping columns of a linked view.
+     */
+    public static final int OPERATION_NOT_SUPPORTED_WITH_LINKED_VIEW = 90800;
+
+    /**
+     * The error is thrown when you try to pass null value as an argument
+     * to the Java function with primitive data type
+     */
+    public static final int NULL_FOR_JAVA_PRIMITIVE = 90801;
+
+    /**
+     * The error with code <code>90802</code> is thrown when the integer
+     * index that is used in the GROUP BY is not in the SELECT list.
+     */
+    public static final int GROUP_BY_INVALID_INDEX = 90802;
+
+
+    /**
+     * The error with code <code>90803</code> is thrown when calculated alias
+     * not found in the resolve list or used before definition
+     */
+    public static final int CALCULATED_ALIAS_NOT_FOUND = 90803;
+
+
+    public static final int DUPLICATE_COLUMN_NAME_W = 99001;
+    public static final int MUST_GROUP_BY_COLUMN_W = 99002;
+
+    /**
+     * The error with code <code>99003</code> is thrown when
+     * trying to delete or update a read only table in the external schema
+     */
+    public static final int TABLE_IS_READ_ONLY = 99003;
+
+    /**
+     * The error with code <code>99003</code> is thrown when
+     * trying to delete/update/select a INSERT only table in external schema
+     */
+    public static final int TABLE_IS_INSERT_ONLY = 99004;
+
+    /**
+     * The error with code <code>99004</code> is thrown when
+     * trying to accees table from linked schema with undefined connection
+     */
+    public static final int EXTERNAL_CONNECTION_NOT_FOUND = 99005;
+
     private ErrorCode() {
         // utility class
     }
@@ -2053,6 +2100,8 @@ public class ErrorCode {
         case INDEX_ALREADY_EXISTS_1: return "42S11";
         case INDEX_NOT_FOUND_1: return "42S12";
         case DUPLICATE_COLUMN_NAME_1: return "42S21";
+        case DUPLICATE_COLUMN_NAME_W: return "W0001";
+        case MUST_GROUP_BY_COLUMN_W: return "W0002";
         case COLUMN_NOT_FOUND_1: return "42S22";
 
         // 0A: feature not supported

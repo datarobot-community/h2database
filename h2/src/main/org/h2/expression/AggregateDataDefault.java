@@ -51,7 +51,7 @@ class AggregateDataDefault extends AggregateData {
                 value = v.convertTo(dataType);
             } else {
                 v = v.convertTo(value.getType());
-                value = value.add(v);
+                value = value.aggregate(v);
             }
             break;
         case Aggregate.AVG:
@@ -59,7 +59,7 @@ class AggregateDataDefault extends AggregateData {
                 value = v.convertTo(DataType.getAddProofType(dataType));
             } else {
                 v = v.convertTo(value.getType());
-                value = value.add(v);
+                value = value.aggregate(v);
             }
             break;
         case Aggregate.MIN:
@@ -189,7 +189,7 @@ class AggregateDataDefault extends AggregateData {
         }
         int type = Value.getHigherOrder(a.getType(), Value.LONG);
         Value b = ValueLong.get(by).convertTo(type);
-        a = a.convertTo(type).divide(b);
+        a = a.convertTo(type).divide(b, false, false);
         return a;
     }
 

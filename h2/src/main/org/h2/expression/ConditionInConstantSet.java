@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.TreeSet;
 import org.h2.engine.Session;
+import org.h2.engine.SysProperties;
 import org.h2.index.IndexCondition;
 import org.h2.message.DbException;
 import org.h2.table.ColumnResolver;
@@ -58,11 +59,11 @@ public class ConditionInConstantSet extends Condition {
     @Override
     public Value getValue(Session session) {
         Value x = left.getValue(session);
-        if (x == ValueNull.INSTANCE) {
+        if (x == ValueNull.INSTANCE && !session.getDatabase().getMode().disableThreeWayLogic) {
             return x;
         }
         boolean result = valueSet.contains(x);
-        if (!result) {
+        if (!result && !session.getDatabase().getMode().disableThreeWayLogic) {
             boolean setHasNull = valueSet.contains(ValueNull.INSTANCE);
             if (setHasNull) {
                 return ValueNull.INSTANCE;

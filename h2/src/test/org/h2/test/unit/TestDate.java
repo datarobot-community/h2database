@@ -139,7 +139,7 @@ public class TestDate extends TestBase {
         assertEquals(0, t1.multiply(ValueInt.get(0)).getSignum());
         assertEquals(0, t1.subtract(t1).getSignum());
         assertEquals("05:35:35.5", t1.multiply(ValueDouble.get(0.5)).getString());
-        assertEquals("22:22:22", t1.divide(ValueDouble.get(0.5)).getString());
+        assertEquals("22:22:22", t1.divide(ValueDouble.get(0.5), false, false).getString());
         assertEquals("-11:11:11", t1.negate().getString());
         assertEquals("11:11:11", t1.negate().negate().getString());
         assertEquals(Value.TIME, t1.getType());

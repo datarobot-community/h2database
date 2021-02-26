@@ -33,6 +33,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
+
+import com.dullesopen.h2.external.ExternalIndexResolver;
+import com.dullesopen.h2.external.ExternalQueryExecutionReporter;
 import org.h2.api.ErrorCode;
 import org.h2.command.CommandInterface;
 import org.h2.engine.ConnectionInfo;
@@ -629,7 +632,7 @@ public class JdbcConnection extends TraceObject implements Connection,
         try {
             debugCodeCall("getWarnings");
             checkClosed();
-            return null;
+            return session.getWarnings();
         } catch (Exception e) {
             throw logAndConvert(e);
         }
@@ -2053,4 +2056,23 @@ public class JdbcConnection extends TraceObject implements Connection,
         return mode;
     }
 
+    public void attachExternalContext(Object context) {
+        session.attachExternalContext(context);
+    }
+
+    public void addExternalConnection(String name, Connection connection) {
+        session.addExternalConnection(name, connection);
+    }
+
+    public void removeExternalConnection(String name) {
+        session.removeExternalConnection(name);
+    }
+
+    public void addExternalIndexResolver(String name, ExternalIndexResolver indexResolver) {
+        session.addExternalIndexResolver(name, indexResolver);
+    }
+
+    public void addExternalQueryExecutionReporter(ExternalQueryExecutionReporter reporter) {
+        session.addExternalQueryExecutionReporter(reporter);
+    }
 }

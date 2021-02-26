@@ -16,7 +16,7 @@ import org.h2.value.ValueLong;
  */
 public class RowImpl implements Row {
     private long key;
-    private final Value[] data;
+    protected Value[] data;
     private int memory;
     private int version;
     private boolean deleted;

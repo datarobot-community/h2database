@@ -115,7 +115,7 @@ public class CreateView extends SchemaCommand {
                             columnTemplates[i] = new Column(columnNames[i], Value.UNKNOWN);
                         }
                     }
-                    view = new TableView(getSchema(), id, viewName, querySQL, null,
+                    view = getSchema().createView(id, viewName, querySQL,
                             columnTemplates, sysSession, false);
                 } else {
                     view.replace(querySQL, sysSession, false, force);

@@ -8,6 +8,8 @@ package org.h2.index;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import org.h2.engine.ColumnExtension;
 import org.h2.engine.Session;
 import org.h2.message.DbException;
 import org.h2.result.Row;
@@ -28,6 +30,7 @@ public class LinkedCursor implements Cursor {
     private final Session session;
     private final ResultSet rs;
     private Row current;
+    private final ColumnExtension columnExtension;
 
     LinkedCursor(TableLink tableLink, ResultSet rs, Session session,
             String sql, PreparedStatement prep) {
@@ -36,6 +39,7 @@ public class LinkedCursor implements Cursor {
         this.rs = rs;
         this.sql = sql;
         this.prep = prep;
+        columnExtension = tableLink.getColumnExtension() ;
     }
 
     @Override
@@ -64,7 +68,9 @@ public class LinkedCursor implements Cursor {
         current = tableLink.getTemplateRow();
         for (int i = 0; i < current.getColumnCount(); i++) {
             Column col = tableLink.getColumn(i);
-            Value v = DataType.readValue(session, rs, i + 1, col.getType());
+            Value v = columnExtension == null ?
+                    DataType.readValue(session, rs, i + 1, col.getType()) :
+                    columnExtension.createValue(session,rs, i + 1, col.getType());
             current.setValue(i, v);
         }
         return true;

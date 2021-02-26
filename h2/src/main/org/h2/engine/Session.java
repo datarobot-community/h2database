@@ -5,6 +5,7 @@
  */
 package org.h2.engine;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,6 +14,13 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.Deque;
+import java.util.ArrayDeque;
+
+import java.sql.SQLWarning;
+
+import com.dullesopen.h2.external.ExternalIndexResolver;
+import com.dullesopen.h2.external.ExternalQueryExecutionReporter;
 import org.h2.api.ErrorCode;
 import org.h2.command.Command;
 import org.h2.command.CommandInterface;
@@ -25,6 +33,7 @@ import org.h2.constraint.Constraint;
 import org.h2.index.Index;
 import org.h2.index.ViewIndex;
 import org.h2.jdbc.JdbcConnection;
+import org.h2.jdbc.JdbcSQLWarning;
 import org.h2.message.DbException;
 import org.h2.message.Trace;
 import org.h2.message.TraceSystem;
@@ -149,6 +158,8 @@ public class Session extends SessionWithState {
 
     private Transaction transaction;
     private long startStatement = -1;
+
+    private Deque<JdbcSQLWarning> warnings = new ArrayDeque<>();
 
     public Session(Database database, User user, int id) {
         this.database = database;
@@ -633,6 +644,9 @@ public class Session extends SessionWithState {
             // need to commit even if rollback is not possible
             // (create/drop table and so on)
             database.commit(this);
+        }
+        for (Schema schema : database.getAllSchemas()) {
+            schema.commit(this, ddl);
         }
         removeTemporaryLobs(true);
         if (undoLog.size() > 0) {
@@ -1707,6 +1721,12 @@ public class Session extends SessionWithState {
         tablesToAnalyze.add(table);
     }
 
+    public void flushSchemas() {
+        for (Schema schema : database.getAllSchemas()) {
+            schema.flush(this);
+        }
+    }
+
     /**
      * Represents a savepoint (a position in a transaction to where one can roll
      * back to).
@@ -1743,5 +1763,67 @@ public class Session extends SessionWithState {
             this.value = v;
         }
 
+    }
+
+    public void addWarning(JdbcSQLWarning warning) {
+        warnings.add(warning);
+    }
+
+    @Override
+    public SQLWarning getWarnings() {
+
+        JdbcSQLWarning prev = null, first = null;
+        for (JdbcSQLWarning w : warnings) {
+            if (first == null)
+                first = w;
+            if (prev != null)
+                prev.setNextException(w);
+            prev = w;
+        }
+        warnings.clear();
+        return first;
+    }
+
+    @Override
+    public void clearWarnings() {
+        warnings.clear();
+    }
+
+    @Override
+    public DbSettings getSettings() {
+        return database.getSettings();
+    }
+
+    @Override
+    public void setColumnExtensionFactory(ColumnExtensionFactory columnExtensionFactory) {
+        database.columnExtensionFactory = columnExtensionFactory;
+    }
+
+    @Override
+    public void attachExternalContext(Object context) {
+        database.context = context;
+    }
+
+    public Object getExternalContext() {
+        return database.context;
+    }
+
+    public void addExternalConnection(String name,
+                                      Connection connection) {
+        database.addExternalConnection(name, connection);
+    }
+
+    @Override
+    public void removeExternalConnection(String name) {
+        database.removeExternalConnection(name);
+    }
+
+    @Override
+    public void addExternalIndexResolver(String name, ExternalIndexResolver indexResolver) {
+        database.addExternalIndexResolver(name, indexResolver);
+    }
+
+    public void addExternalQueryExecutionReporter(ExternalQueryExecutionReporter externalQueryExecutionReporter) {
+        database.setExternalQueryExecutionReporter(externalQueryExecutionReporter);
     }
 }

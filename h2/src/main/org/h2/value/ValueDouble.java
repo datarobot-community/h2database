@@ -9,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import org.h2.api.ErrorCode;
+import org.h2.engine.SysProperties;
 import org.h2.message.DbException;
 
 /**
@@ -38,8 +39,19 @@ public class ValueDouble extends Value {
 
     private final double value;
 
+    /**
+     * If value is converted from another type, keep the reference to the original value here
+     */
+    public final Value reference;
+
     private ValueDouble(double value) {
         this.value = value;
+        this.reference = null;
+    }
+
+    private ValueDouble(double value, Value reference) {
+        this.value = value;
+        this.reference = reference;
     }
 
     @Override
@@ -66,10 +78,13 @@ public class ValueDouble extends Value {
     }
 
     @Override
-    public Value divide(Value v) {
+    public Value divide(Value v, boolean noninteger, boolean allowZeroDivide) {
         ValueDouble v2 = (ValueDouble) v;
         if (v2.value == 0.0) {
-            throw DbException.get(ErrorCode.DIVISION_BY_ZERO_1, getSQL());
+            if (allowZeroDivide)
+                return ValueNull.INSTANCE;
+            else
+                throw DbException.get(ErrorCode.DIVISION_BY_ZERO_1, getSQL());
         }
         return ValueDouble.get(value / v2.value);
     }
@@ -118,7 +133,10 @@ public class ValueDouble extends Value {
 
     @Override
     public String getString() {
-        return String.valueOf(value);
+        Value.Convert convert = Value.getConvert(Value.DOUBLE, Value.STRING);
+        return convert == null ?
+                String.valueOf(value) :
+                convert.convertTo(this, Value.STRING).getString();
     }
 
     @Override
@@ -166,6 +184,15 @@ public class ValueDouble extends Value {
         return (ValueDouble) Value.cache(new ValueDouble(d));
     }
 
+    public static ValueDouble get(double d, Value extension) {
+        if (Double.isNaN(d))
+            return NAN;
+        else {
+            // do not keep in the cache
+            return new ValueDouble(d, extension);
+        }
+    }
+
     @Override
     public int getDisplaySize() {
         return DISPLAY_SIZE;
@@ -178,5 +205,22 @@ public class ValueDouble extends Value {
         }
         return compareSecure((ValueDouble) other, null) == 0;
     }
+
+    public boolean checkPrecision(long precision) {
+        return true;
+    }
+
+    @Override
+    public Value aggregate(Value v) {
+        ValueDouble v2 = (ValueDouble) v;
+        if (SysProperties.AGGREGATE_IGNORE_NAN_INFINITE) {
+            if ((Double.isNaN(v2.value) || Double.isInfinite(v2.value)))
+                return this;
+            if ((Double.isNaN(value) || Double.isInfinite(value)))
+                return v;
+        }
+        return ValueDouble.get(value + v2.value);
+    }
+
 
 }

@@ -50,4 +50,6 @@ public interface Aggregate {
      */
     Object getResult() throws SQLException;
 
+    int getPrecision(int[] precisions, long[] longs) throws SQLException;
+
 }

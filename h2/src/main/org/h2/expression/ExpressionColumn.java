@@ -20,6 +20,7 @@ import org.h2.table.Column;
 import org.h2.table.ColumnResolver;
 import org.h2.table.Table;
 import org.h2.table.TableFilter;
+import org.h2.util.StringUtils;
 import org.h2.value.Value;
 import org.h2.value.ValueBoolean;
 import org.h2.value.ValueEnum;
@@ -56,6 +57,11 @@ public class ExpressionColumn extends Expression {
 
     @Override
     public String getSQL() {
+        return getSQL(false);
+    }
+
+    @Override
+    public String getSQL(boolean withExtension) {
         String sql;
         boolean quote = database.getSettings().databaseToUpper;
         if (column != null) {
@@ -70,6 +76,10 @@ public class ExpressionColumn extends Expression {
         if (schemaName != null) {
             String s = quote ? Parser.quoteIdentifier(schemaName) : schemaName;
             sql = s + "." + sql;
+        }
+
+        if (withExtension && extension != null) {
+            sql = sql + " EXTENSION " + StringUtils.quoteStringSQL(extension);
         }
         return sql;
     }
@@ -334,6 +344,20 @@ public class ExpressionColumn extends Expression {
     public Expression getNotIfPossible(Session session) {
         return new Comparison(session, Comparison.EQUAL, this,
                 ValueExpression.get(ValueBoolean.get(false)));
+    }
+
+    public String getExtension() {
+        String e = column.getExtension();
+        return extension == null ? e : e == null ? extension : e + extension;
+    }
+
+    @Override
+    public String getMixedCaseName() {
+        return column == null ? null : column.getMixedCaseName();
+    }
+
+    public String getColumnLabel() {
+        return getAlias();
     }
 
 }

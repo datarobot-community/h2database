@@ -35,6 +35,9 @@ public class JavaAggregate extends Expression {
     private Connection userConnection;
     private int lastGroupRowId;
 
+    private long precision = Integer.MAX_VALUE;
+    private int displaySize = Integer.MAX_VALUE;
+
     public JavaAggregate(UserAggregate userAggregate, Expression[] args,
             Select select) {
         this.userAggregate = userAggregate;
@@ -53,12 +56,12 @@ public class JavaAggregate extends Expression {
 
     @Override
     public long getPrecision() {
-        return Integer.MAX_VALUE;
+        return precision;
     }
 
     @Override
     public int getDisplaySize() {
-        return Integer.MAX_VALUE;
+        return displaySize;
     }
 
     @Override
@@ -116,15 +119,23 @@ public class JavaAggregate extends Expression {
         userConnection = session.createConnection(false);
         int len = args.length;
         argTypes = new int[len];
+
+        int[] argSqlTypes = new int[len];
+        long[] precisions = new long[len];
+
         for (int i = 0; i < len; i++) {
             Expression expr = args[i];
             args[i] = expr.optimize(session);
             int type = expr.getType();
             argTypes[i] = type;
+            argSqlTypes[i] = DataType.convertTypeToSQLType(type);
+            precisions[i] = expr.getPrecision();
         }
         try {
             Aggregate aggregate = getInstance();
             dataType = aggregate.getInternalType(argTypes);
+            precision = aggregate.getPrecision(argTypes, precisions);
+            displaySize = (int) precision;
         } catch (SQLException e) {
             throw DbException.convert(e);
         }

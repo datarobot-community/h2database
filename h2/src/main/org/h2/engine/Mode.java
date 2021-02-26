@@ -160,6 +160,59 @@ public class Mode {
      */
     public boolean allowAffinityKey;
 
+    /**
+     * Single space is the same as NULL in most operations
+     */
+    public boolean spaceIsNull;
+
+    /**
+     * Use column alias in expression if prefixed by CALCULATED keyword
+     */
+    public boolean calculatedAlias;
+
+    /**
+     * Silently truncate string value if it does ot fit into target
+     */
+    public boolean truncateStringValue;
+
+    /**
+     * Allow to use GROUP BY n, where n is column index in the SELECT list, similar to ORDER BY
+     */
+    public boolean groupByInteger;
+
+    /**
+     * Cast explicitly specified decimal constants to ValueDouble
+     */
+    public boolean decimalConstantAsDouble;
+
+    /**
+     * use update count in non ANSI mode, returns non zero value in case of SELECT operations
+     */
+    public boolean updateCountOnCreateTable;
+
+    /**
+     * Integer numbers are divided as doubles
+     */
+    public boolean nonIntegerDivision;
+
+    /**
+     * Division 0/0 result in NULL
+     */
+    public boolean allowZeroDivide;
+
+    /**
+     * CONCAT function returns predefined size instead of sum of the strings
+     */
+    public Integer concatReturnSize;
+
+    /**
+     * Non NULL semantic for null comparison, treats two nulls as equal.
+     * <p>
+     * not compatible with ANSI
+     */
+
+    public boolean disableThreeWayLogic;
+
     private final String name;
 
     static {
@@ -262,6 +315,21 @@ public class Mode {
         mode.nullConcatIsNull = true;
         mode.allowAffinityKey = true;
         mode.indexDefinitionInCreateTable = true;
+        add(mode);
+
+        mode = new Mode("Carolina");
+        mode.nullConcatIsNull = false;
+        mode.treatEmptyStringsAsNull = true;
+        mode.spaceIsNull = true;
+        mode.calculatedAlias = true;
+        mode.truncateStringValue = true;
+        mode.groupByInteger = true;
+        mode.decimalConstantAsDouble = true;
+        mode.updateCountOnCreateTable = true;
+        mode.nonIntegerDivision = true;
+        mode.allowZeroDivide = true;
+        mode.concatReturnSize = 200;
+        mode.disableThreeWayLogic = true;
         add(mode);
     }
 

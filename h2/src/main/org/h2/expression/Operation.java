@@ -7,6 +7,7 @@ package org.h2.expression;
 
 import org.h2.engine.Mode;
 import org.h2.engine.Session;
+import org.h2.engine.SysProperties;
 import org.h2.message.DbException;
 import org.h2.table.ColumnResolver;
 import org.h2.table.TableFilter;
@@ -61,6 +62,7 @@ public class Operation extends Expression {
     private int opType;
     private Expression left, right;
     private int dataType;
+    private boolean convertLeft = true;
     private boolean convertRight = true;
 
     public Operation(int opType, Expression left, Expression right) {
@@ -107,7 +109,15 @@ public class Operation extends Expression {
 
     @Override
     public Value getValue(Session session) {
-        Value l = left.getValue(session).convertTo(dataType);
+        Value l;
+        if (left == null) {
+            l = null;
+        } else {
+            l = left.getValue(session);
+            if (convertLeft) {
+                l = l.convertTo(dataType);
+            }
+        }
         Value r;
         if (right == null) {
             r = null;
@@ -157,7 +167,8 @@ public class Operation extends Expression {
             if (l == ValueNull.INSTANCE || r == ValueNull.INSTANCE) {
                 return ValueNull.INSTANCE;
             }
-            return l.divide(r);
+            Mode mode = session.getDatabase().getMode();
+            return l.divide(r, mode.nonIntegerDivision, mode.allowZeroDivide);
         case MODULUS:
             if (l == ValueNull.INSTANCE || r == ValueNull.INSTANCE) {
                 return ValueNull.INSTANCE;
@@ -223,7 +234,10 @@ public class Operation extends Expression {
                         l = r;
                         r = t;
                     }
-                    if (l == Value.INT) {
+                    if (SysProperties.DATE_ADD_EXTENDED &&
+                            (l == Value.INT||l == Value.DECIMAL || l == Value.FLOAT || l == Value.DOUBLE)) {
+                            return createDataAddExtendedFunction(session, left, right);
+                    } else if (l == Value.INT) {
                         // Oracle date add
                         Function f = Function.getFunction(session.getDatabase(), "DATEADD");
                         f.setParameter(0, ValueExpression.get(ValueString.get("DAY")));
@@ -249,7 +263,12 @@ public class Operation extends Expression {
                         return this;
                     }
                 } else if (opType == MINUS) {
-                    if ((l == Value.DATE || l == Value.TIMESTAMP) && r == Value.INT) {
+                    if (SysProperties.DATE_ADD_EXTENDED &&
+                            (r == Value.INT||r == Value.DECIMAL || r == Value.FLOAT || r == Value.DOUBLE)) {
+                        right = new Operation(NEGATE, right, null);
+                        right = right.optimize(session);
+                        return createDataAddExtendedFunction(session, right, left);
+                    } else if ((l == Value.DATE || l == Value.TIMESTAMP) && r == Value.INT) {
                         // Oracle date subtract
                         Function f = Function.getFunction(session.getDatabase(), "DATEADD");
                         f.setParameter(0, ValueExpression.get(ValueString.get("DAY")));
@@ -301,7 +320,13 @@ public class Operation extends Expression {
                         return this;
                     }
                 } else if (opType == DIVIDE) {
-                    if (l == Value.TIME) {
+                    if (SysProperties.DATE_TIME_DIVIDE_AS_DOUBLE) {
+                        dataType = Value.DOUBLE;
+                        convertLeft = false;
+                        convertRight = false;
+                        return this;
+                    }
+                    else if (l == Value.TIME) {
                         dataType = Value.TIME;
                         convertRight = false;
                         return this;
@@ -399,6 +424,28 @@ public class Operation extends Expression {
     @Override
     public int getCost() {
         return left.getCost() + 1 + (right == null ? 0 : right.getCost());
+    }
+
+    private Expression createDataAddExtendedFunction(Session session, Expression l, Expression r) {
+        Function f = Function.getFunction(session.getDatabase(), "DATEADD2");
+        String first;
+        switch(r.getType()) {
+            case Value.TIME:
+            case Value.TIMESTAMP :
+                first="SECOND";
+                break;
+            case Value.DATE :
+                first="DAY";
+                break;
+            default:
+                first=null;
+                DbException.throwInternalError("type=" + r.getType());
+        }
+        f.setParameter(0, ValueExpression.get(ValueString.get(first)));
+        f.setParameter(1, l);
+        f.setParameter(2, r);
+        f.doneWithParameters();
+        return f.optimize(session);
     }
 
 }

@@ -16,6 +16,9 @@ import org.h2.value.DataType;
 import org.h2.value.Value;
 import org.h2.value.ValueArray;
 import org.h2.value.ValueNull;
+import org.h2.value.ValueInt;
+import org.h2.value.ValueDouble;
+import org.h2.value.ValueLong;
 import org.h2.value.ValueResultSet;
 
 /**
@@ -80,12 +83,27 @@ public class JavaFunction extends Expression implements FunctionCall {
 
     @Override
     public long getPrecision() {
-        return Integer.MAX_VALUE;
+        long precision = FunctionInfo.calculatePrecision(functionAlias.getMethod(), functionAlias.getPrecision(), args);
+        if (precision == 0)
+            switch (javaMethod.getDataType()) {
+                case Value.DOUBLE:
+                    precision = ValueDouble.PRECISION;
+                    break;
+                case Value.LONG:
+                    precision = ValueLong.PRECISION;
+                    break;
+                case Value.INT:
+                    precision = ValueInt.PRECISION;
+                    break;
+                default:
+            }
+        return precision;
     }
-
+    
     @Override
     public int getDisplaySize() {
-        return Integer.MAX_VALUE;
+        long size = getPrecision();
+        return (int) Math.min(size, Integer.MAX_VALUE);
     }
 
     @Override

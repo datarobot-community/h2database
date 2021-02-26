@@ -26,6 +26,12 @@ import org.h2.value.ValueArray;
  */
 public class LocalResult implements ResultInterface, ResultTarget {
 
+    /**
+     * maxMemoryRows does not work well for wide tables, so we need to adjust it according to the table width.
+     * Table with more columns will scale cutoff value.
+     */
+    private static final int SCALE_ROW_SIZE = 10;
+
     private int maxMemoryRows;
     private Session session;
     private int visibleColumnCount;
@@ -301,7 +307,7 @@ public class LocalResult implements ResultInterface, ResultTarget {
                 ValueArray array = getArrayOfVisible(values);
                 distinctRows.put(array, values);
                 rowCount = distinctRows.size();
-                if (rowCount > maxMemoryRows) {
+                if (rowCount > scale(maxMemoryRows, values.length)) {
                     external = new ResultTempTable(session, expressions, true, sort);
                     rowCount = external.addRows(distinctRows.values());
                     distinctRows = null;
@@ -313,12 +319,18 @@ public class LocalResult implements ResultInterface, ResultTarget {
         }
         rows.add(values);
         rowCount++;
-        if (rows.size() > maxMemoryRows) {
+        if (rows.size() > scale(maxMemoryRows, values.length)) {
             if (external == null) {
                 external = new ResultTempTable(session, expressions, false, sort);
             }
             addRowsToDisk();
         }
+    }
+
+    private int scale(int maxMemoryRows, int length) {
+        return maxMemoryRows == Integer.MAX_VALUE || length <= SCALE_ROW_SIZE ?
+                maxMemoryRows :
+                maxMemoryRows * SCALE_ROW_SIZE / length;
     }
 
     private void addRowsToDisk() {
@@ -337,7 +349,7 @@ public class LocalResult implements ResultInterface, ResultTarget {
     public void done() {
         if (distinct) {
             if (distinctRows != null) {
-                rows = distinctRows.values();
+                rows = new ArrayList<>(distinctRows.values());
             } else {
                 if (external != null && sort != null) {
                     // external sort
@@ -355,7 +367,7 @@ public class LocalResult implements ResultInterface, ResultTarget {
                             external = new ResultTempTable(session, expressions, true, sort);
                         }
                         rows.add(list);
-                        if (rows.size() > maxMemoryRows) {
+                        if (rows.size() > maxMemoryRows ) {
                             rowCount = external.addRows(rows);
                             rows.clear();
                         }
@@ -454,7 +466,8 @@ public class LocalResult implements ResultInterface, ResultTarget {
 
     @Override
     public String getColumnName(int i) {
-        return expressions[i].getColumnName();
+        String mixed = expressions[i].getMixedCaseName();
+        return mixed != null ? mixed : expressions[i].getColumnName();
     }
 
     @Override
@@ -539,6 +552,15 @@ public class LocalResult implements ResultInterface, ResultTarget {
     @Override
     public void setFetchSize(int fetchSize) {
         // ignore
+    }
+
+    public String getExtension(int i) {
+        return expressions[i].getExtension();
+    }
+
+    @Override
+    public String getColumnLabel(int i) {
+        return expressions[i].getColumnLabel();
     }
 
 }

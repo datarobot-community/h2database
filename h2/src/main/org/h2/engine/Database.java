@@ -6,10 +6,13 @@
 package org.h2.engine;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -17,6 +20,8 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import com.dullesopen.h2.external.ExternalIndexResolver;
+import com.dullesopen.h2.external.ExternalQueryExecutionReporter;
 import org.h2.api.DatabaseEventListener;
 import org.h2.api.ErrorCode;
 import org.h2.api.JavaObjectSerializer;
@@ -200,6 +205,19 @@ public class Database implements DataHandler {
     private QueryStatisticsData queryStatisticsData;
     private RowFactory rowFactory = RowFactory.DEFAULT;
 
+    public ColumnExtensionFactory columnExtensionFactory;
+
+    /**
+     * Context to be passed to external schemas if required
+     */
+    public Object context;
+
+    private Map<String, Connection> externalConnections= new LinkedHashMap<String, Connection>();
+
+    private Map<String, ExternalIndexResolver> externalIndexResolvers = new HashMap<String, ExternalIndexResolver>();
+
+    private ExternalQueryExecutionReporter externalQueryExecutionReporter;
+
     public Database(ConnectionInfo ci, String cipher) {
         String name = ci.getName();
         this.dbSettings = ci.getDbSettings();
@@ -209,7 +227,7 @@ public class Database implements DataHandler {
         this.filePasswordHash = ci.getFilePasswordHash();
         this.fileEncryptionKey = ci.getFileEncryptionKey();
         this.databaseName = name;
-        this.databaseShortName = parseDatabaseShortName();
+        this.databaseShortName = ci.getCatalog() == null ? parseDatabaseShortName() : ci.getCatalog();
         this.maxLengthInplaceLob = Constants.DEFAULT_MAX_LENGTH_INPLACE_LOB;
         this.cipher = cipher;
         String lockMethodName = ci.getProperty("FILE_LOCK", null);
@@ -1262,7 +1280,7 @@ public class Database implements DataHandler {
         try {
             if (systemSession != null) {
                 if (powerOffCount != -1) {
-                    for (Table table : getAllTablesAndViews(false)) {
+                    for (Table table : getAllTablesAndViews(systemSession,false,false)) {
                         if (table.isGlobalTemporary()) {
                             table.removeChildrenAndResources(systemSession);
                         } else {
@@ -1288,6 +1306,9 @@ public class Database implements DataHandler {
                     meta.close(systemSession);
                     systemSession.commit(true);
                 }
+            }
+            for (Schema schema : schemas.values()) {
+                schema.close(systemSession);
             }
         } catch (DbException e) {
             trace.error(e, "close");
@@ -1528,29 +1549,34 @@ public class Database implements DataHandler {
      * @param includeMeta whether to force including the meta data tables (if
      *            true, metadata tables are always included; if false, metadata
      *            tables are only included if they are already initialized)
+     * @param force
      * @return all objects of that type
      */
-    public ArrayList<Table> getAllTablesAndViews(boolean includeMeta) {
+    public ArrayList<Table> getAllTablesAndViews(Session session, boolean includeMeta, boolean force) {
         if (includeMeta) {
             initMetaTables();
         }
         ArrayList<Table> list = New.arrayList();
         for (Schema schema : schemas.values()) {
-            list.addAll(schema.getAllTablesAndViews());
+            list.addAll(schema.getAllTablesAndViews(session, force));
         }
         return list;
     }
 
+    public ArrayList<Table> getAllTablesAndViews(boolean includeMeta) {
+        return getAllTablesAndViews(null,includeMeta, false);
+    }
     /**
      * Get the tables with the given name, if any.
      *
+     * @param session
      * @param name the table name
      * @return the list
      */
-    public ArrayList<Table> getTableOrViewByName(String name) {
+    public ArrayList<Table> getTableOrViewByName(Session session, String name) {
         ArrayList<Table> list = New.arrayList();
         for (Schema schema : schemas.values()) {
-            Table table = schema.getTableOrViewByName(name);
+            Table table = schema.getTableOrViewByName(session, name);
             if (table != null) {
                 list.add(table);
             }
@@ -1661,7 +1687,7 @@ public class Database implements DataHandler {
     public synchronized void renameSchemaObject(Session session,
             SchemaObject obj, String newName) {
         checkWritingAllowed();
-        obj.getSchema().rename(obj, newName);
+        obj.getSchema().rename(session, obj, newName);
         updateMetaAndFirstLevelChildren(session, obj);
     }
 
@@ -1853,7 +1879,9 @@ public class Database implements DataHandler {
             if (comment != null) {
                 removeDatabaseObject(session, comment);
             }
-            obj.getSchema().remove(obj);
+            obj.getSchema().remove(session, obj);
+            Schema schema=obj.getSchema();
+            String name = obj.getName();
             int id = obj.getId();
             if (!starting) {
                 Table t = getDependentTable(obj, null);
@@ -1865,6 +1893,7 @@ public class Database implements DataHandler {
                 obj.removeChildrenAndResources(session);
             }
             removeMeta(session, id);
+            schema.removeExternalResources(type, name);
         }
     }
 
@@ -2890,4 +2919,37 @@ public class Database implements DataHandler {
         return engine;
     }
 
+    public void addExternalConnection(String name, Connection connection) {
+        externalConnections.put(name,connection);
+    }
+
+    public Connection getExternalConnection(String name) {
+        return externalConnections.get(name);
+    }
+
+    /**
+     * the connection are keyed by the whole object
+     * so the removal is a little bit tricky
+     * @param name
+     */
+    public void removeExternalConnection(String name) {
+        externalConnections.remove(name);
+    }
+
+    public void addExternalIndexResolver(String name, ExternalIndexResolver indexResolver) {
+        externalIndexResolvers.put(name, indexResolver);
+    }
+
+    public ExternalIndexResolver getExternalIndexResolver(String name) {
+        return externalIndexResolvers.get(name);
+    }
+
+    public void reportExternalQueryExecution(ExternalQueryExecutionReporter.Action action, String schema, String sql, Connection connection) {
+        if (externalQueryExecutionReporter != null)
+            externalQueryExecutionReporter.report(action, schema, sql, connection);
+    }
+
+    public void setExternalQueryExecutionReporter(ExternalQueryExecutionReporter externalQueryExecutionReporter) {
+        this.externalQueryExecutionReporter = externalQueryExecutionReporter;
+    }
 }

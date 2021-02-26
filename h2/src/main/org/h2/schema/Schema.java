@@ -27,6 +27,8 @@ import org.h2.mvstore.db.MVTableEngine;
 import org.h2.table.RegularTable;
 import org.h2.table.Table;
 import org.h2.table.TableLink;
+import org.h2.table.TableView;
+import org.h2.table.Column;
 import org.h2.util.New;
 import org.h2.util.StringUtils;
 
@@ -40,8 +42,8 @@ public class Schema extends DbObjectBase {
     private final boolean system;
     private ArrayList<String> tableEngineParams;
 
-    private final ConcurrentHashMap<String, Table> tablesAndViews;
-    private final ConcurrentHashMap<String, Index> indexes;
+    protected final ConcurrentHashMap<String, Table> tablesAndViews;
+    protected final ConcurrentHashMap<String, Index> indexes;
     private final ConcurrentHashMap<String, Sequence> sequences;
     private final ConcurrentHashMap<String, TriggerObject> triggers;
     private final ConcurrentHashMap<String, Constraint> constraints;
@@ -247,11 +249,11 @@ public class Schema extends DbObjectBase {
 
     /**
      * Rename an object.
-     *
+     * @param session
      * @param obj the object to rename
      * @param newName the new name
      */
-    public void rename(SchemaObject obj, String newName) {
+    public void rename(Session session, SchemaObject obj, String newName) {
         int type = obj.getType();
         Map<String, SchemaObject> map = getMap(type);
         if (SysProperties.CHECK) {
@@ -551,8 +553,10 @@ public class Schema extends DbObjectBase {
      * Get all tables and views.
      *
      * @return a (possible empty) list of all objects
+     * @param session
+     * @param force
      */
-    public ArrayList<Table> getAllTablesAndViews() {
+    public ArrayList<Table> getAllTablesAndViews(Session session, boolean force) {
         synchronized (database) {
             return New.arrayList(tablesAndViews.values());
         }
@@ -561,10 +565,11 @@ public class Schema extends DbObjectBase {
     /**
      * Get the table with the given name, if any.
      *
+     * @param session
      * @param name the table name
      * @return the table or null if not found
      */
-    public Table getTableOrViewByName(String name) {
+    public Table getTableOrViewByName(Session session, String name) {
         synchronized (database) {
             return tablesAndViews.get(name);
         }
@@ -573,9 +578,10 @@ public class Schema extends DbObjectBase {
     /**
      * Remove an object from this schema.
      *
+     * @param session
      * @param obj the object to remove
      */
-    public void remove(SchemaObject obj) {
+    public void remove(Session session, SchemaObject obj) {
         String objName = obj.getName();
         Map<String, SchemaObject> map = getMap(obj.getType());
         if (SysProperties.CHECK && !map.containsKey(objName)) {
@@ -630,14 +636,56 @@ public class Schema extends DbObjectBase {
      * @param force create the object even if the database can not be accessed
      * @return the {@link TableLink} object
      */
-    public TableLink createTableLink(int id, String tableName, String driver,
-            String url, String user, String password, String originalSchema,
-            String originalTable, boolean emitUpdates, boolean force) {
+    public TableLink createTableLink(int id, String tableName,
+                                     String driver, String url, String user, String password,
+                                     String externalConnectionName,
+                                     String originalSchema, String originalTable,
+                                     boolean emitUpdates, boolean force, boolean view) {
         synchronized (database) {
             return new TableLink(this, id, tableName,
                     driver, url, user, password,
-                    originalSchema, originalTable, emitUpdates, force);
+                    externalConnectionName,
+                    originalSchema, originalTable, emitUpdates, force, view, database.columnExtensionFactory);
         }
     }
 
+    /**
+     * Close connections to all linked schemata and tables
+     * hook to be used by user-defined schema to close the resources.
+     * @param session
+     */
+    public void close(Session session) {
+    }
+
+    public TableView createView(int id, String name, String querySQL, Column[] columnTemplates, Session sysSession, boolean recursive) {
+        return new TableView(this, id, name, querySQL, null, columnTemplates, sysSession, recursive);
+    }
+
+    /**
+     * verify if the table exists before trying to create it. May be overwritten in custom schema.
+     *
+     * @param session
+     * @param tableName
+     * @return
+     */
+    public boolean verifyTableOrView(Session session, String tableName) {
+        return findTableOrView(session, tableName) != null;
+    }
+
+    /**
+     * Hook for user defined schema
+     * @param session
+     * @param ddl
+     */
+    public void commit(Session session, boolean ddl) {
+    }
+
+    /**
+     * Hook for user defined schema to remove any additional external resources associated with the objects
+     */
+    public void removeExternalResources(int type, String name) {
+    }
+
+    public void flush(Session session) {
+    }
 }

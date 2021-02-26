@@ -64,6 +64,13 @@ public class DbSettings extends SettingsBase {
     public final boolean databaseToUpper = get("DATABASE_TO_UPPER", true);
 
     /**
+     * Database setting <code>MIXED_CASE</code> (default: false).<br />
+     * Column and table names are kept with mixed case internally inn the database.
+     * non case sensitive but case preserving.
+     */
+    public final boolean mixedCase = get("MIXED_CASE", false);
+
+    /**
      * Database setting <code>DB_CLOSE_ON_EXIT</code> (default: true).<br />
      * Close the database when the virtual machine exits normally, using a
      * shutdown hook.
@@ -349,6 +356,12 @@ public class DbSettings extends SettingsBase {
      * (default: false).<br />
      */
     public final boolean multiThreaded = get("MULTI_THREADED", false);
+
+    /**
+     * Database setting <code>LINK_FETCH_SIZE</code>
+     * (default: 0).<br />
+     */
+    public final int linkFetchSize= get("LINK_FETCH_SIZE", 0);
 
     private DbSettings(HashMap<String, String> s) {
         super(s);

@@ -25,6 +25,7 @@ import org.h2.expression.Parameter;
 import org.h2.index.Cursor;
 import org.h2.index.Index;
 import org.h2.index.IndexType;
+import org.h2.jdbc.JdbcSQLWarning;
 import org.h2.message.DbException;
 import org.h2.result.LazyResult;
 import org.h2.result.LocalResult;
@@ -71,7 +72,7 @@ public class Select extends Query {
     private Expression condition;
     private int visibleColumnCount, distinctColumnCount;
     private ArrayList<SelectOrderBy> orderList;
-    private ArrayList<Expression> group;
+    private ArrayList<GroupBy> group;
     private int[] groupIndex;
     private boolean[] groupByExpression;
     private HashMap<Expression, Object> currentGroup;
@@ -129,11 +130,11 @@ public class Select extends Query {
         isGroupQuery = true;
     }
 
-    public void setGroupBy(ArrayList<Expression> group) {
+    public void setGroupBy(ArrayList<GroupBy> group) {
         this.group = group;
     }
 
-    public ArrayList<Expression> getGroupBy() {
+    public ArrayList<GroupBy> getGroupBy() {
         return group;
     }
 
@@ -347,7 +348,7 @@ public class Select extends Query {
         if (groupIndex == null && groups.size() == 0) {
             groups.put(defaultGroup, new HashMap<Expression, Object>());
         }
-        ArrayList<Value> keys = groups.keys();
+        java.util.Set<Value> keys = groups.keys();
         for (Value v : keys) {
             ValueArray key = (ValueArray) v;
             currentGroup = groups.get(key);
@@ -740,12 +741,18 @@ public class Select extends Query {
             for (int i = 0; i < visibleColumnCount; i++) {
                 Expression expr = expressions.get(i);
                 expr = expr.getNonAliasExpression();
-                String sql = expr.getSQL();
+                String sql = expr.getSQL(true);
                 expressionSQL.add(sql);
             }
         } else {
             expressionSQL = null;
         }
+
+        if (removeDuplicateColumns && SysProperties.REMOVE_DUPLICATE_NAME_ON_CREATE_TABLE_AS) {
+            removeDuplicateColumns();
+            visibleColumnCount = expressions.size();
+        }
+
         if (orderList != null) {
             initOrder(session, expressions, expressionSQL, orderList,
                     visibleColumnCount, distinct, filters);
@@ -770,7 +777,14 @@ public class Select extends Query {
             int expSize = expressionSQL.size();
             groupIndex = new int[size];
             for (int i = 0; i < size; i++) {
-                Expression expr = group.get(i);
+                Expression expr = group.get(i).expression;
+                if (expr==null) {
+                    int index = group.get(i).columnIndexExpr - 1;
+                    if (index < 0 || index >= expressions.size()) {
+                        throw DbException.get(ErrorCode.GROUP_BY_INVALID_INDEX, "" + (index + 1), "" + expressions.size());
+                    }
+                    expr = expressions.get(index).getNonAliasExpression();
+                }
                 String sql = expr.getSQL();
                 int found = -1;
                 for (int j = 0; j < expSize; j++) {
@@ -1073,7 +1087,7 @@ public class Select extends Query {
         StatementBuilder buff = new StatementBuilder();
         for (TableFilter f : topFilters) {
             Table t = f.getTable();
-            if (t.isView() && ((TableView) t).isRecursive()) {
+            if (t.isView() && t instanceof TableView && ((TableView) t).isRecursive()) {
                 buff.append("WITH RECURSIVE ").append(t.getName()).append('(');
                 buff.resetCount();
                 for (Column c : t.getColumns()) {
@@ -1091,7 +1105,7 @@ public class Select extends Query {
         for (int i = 0; i < visibleColumnCount; i++) {
             buff.appendExceptFirst(",");
             buff.append('\n');
-            buff.append(StringUtils.indent(exprList[i].getSQL(), 4, false));
+            buff.append(StringUtils.indent(exprList[i].getSQL(true), 4, false));
         }
         buff.append("\nFROM ");
         TableFilter filter = topTableFilter;
@@ -1131,7 +1145,7 @@ public class Select extends Query {
         if (group != null) {
             buff.append("\nGROUP BY ");
             buff.resetCount();
-            for (Expression g : group) {
+            for (GroupBy g : group) {
                 buff.appendExceptFirst(", ");
                 buff.append(StringUtils.unEnclose(g.getSQL()));
             }
@@ -1398,6 +1412,26 @@ public class Select extends Query {
         return sort;
     }
 
+    private void removeDuplicateColumns() {
+        // duplicate resolver functionality, it will be done later anyway,
+        // but PG sees no harm doing it now
+        for (TableFilter f : filters) {
+            for (Expression expr : expressions) {
+                expr.mapColumns(f, 0);
+            }
+        }
+        java.util.Set<String> used = new HashSet<String>();
+        for (int i = 0; i < expressions.size(); i++) {
+            String alias = expressions.get(i).getAlias();
+            boolean uniq = used.add(alias);
+            if (!uniq) {
+                expressions.remove(i--);
+                JdbcSQLWarning warning = DbException.getWarning(ErrorCode.DUPLICATE_COLUMN_NAME_W, alias);
+                session.addWarning(warning);
+            }
+        }
+    }
+
     /**
      * Lazy execution for this select.
      */
@@ -1407,7 +1441,7 @@ public class Select extends Query {
         int columnCount;
 
         LazyResultSelect(Expression[] expressions, int columnCount) {
-            super(expressions);
+            super(expressions, sqlStatement);
             this.columnCount = columnCount;
             setCurrentRowNumber(0);
         }

@@ -9,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Time;
 import org.h2.api.ErrorCode;
+import org.h2.engine.SysProperties;
 import org.h2.message.DbException;
 import org.h2.util.DateTimeUtils;
 import org.h2.util.MathUtils;
@@ -174,8 +175,11 @@ public class ValueTime extends Value {
     }
 
     @Override
-    public Value divide(Value v) {
-        return ValueTime.fromNanos((long) (nanos / v.getDouble()));
+    public Value divide(Value v, boolean noninteger, boolean allowZeroDivide) {
+        return
+                SysProperties.DATE_TIME_DIVIDE_AS_DOUBLE ?
+                        ValueDouble.get(nanos / (1000000000 * v.getDouble())) :
+                        ValueTime.fromNanos((long) (nanos / v.getDouble()));
     }
 
     @Override
@@ -230,4 +234,7 @@ public class ValueTime extends Value {
         }
     }
 
+    public boolean checkPrecision(long precision) {
+        return true;
+    }
 }

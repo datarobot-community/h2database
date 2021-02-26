@@ -112,7 +112,7 @@ public class MetaTable extends Table {
 
     private final int type;
     private final int indexColumn;
-    private final MetaIndex metaIndex;
+    protected MetaIndex metaIndex;
 
     /**
      * Create a new metadata table.
@@ -610,7 +610,7 @@ public class MetaTable extends Table {
     }
 
     private ArrayList<Table> getAllTables(Session session) {
-        ArrayList<Table> tables = database.getAllTablesAndViews(true);
+        ArrayList<Table> tables = database.getAllTablesAndViews(session, true, true);
         ArrayList<Table> tempTables = session.getLocalTempTables();
         tables.addAll(tempTables);
         return tables;
@@ -620,7 +620,7 @@ public class MetaTable extends Table {
         if (database.getMode().lowerCaseIdentifiers) {
             tableName = StringUtils.toUpperEnglish(tableName);
         }
-        ArrayList<Table> tables = database.getTableOrViewByName(tableName);
+        ArrayList<Table> tables = database.getTableOrViewByName(session, tableName);
         for (Table temp : session.getLocalTempTables()) {
             if (temp.getName().equals(tableName)) {
                 tables.add(temp);

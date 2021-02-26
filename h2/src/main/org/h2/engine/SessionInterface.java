@@ -6,7 +6,12 @@
 package org.h2.engine;
 
 import java.io.Closeable;
+import java.sql.Connection;
+import java.sql.SQLWarning;
 import java.util.ArrayList;
+
+import com.dullesopen.h2.external.ExternalIndexResolver;
+import com.dullesopen.h2.external.ExternalQueryExecutionReporter;
 import org.h2.command.CommandInterface;
 import org.h2.message.Trace;
 import org.h2.store.DataHandler;
@@ -153,4 +158,24 @@ public interface SessionInterface extends Closeable {
      * @return the current schema name
      */
     String getCurrentSchemaName();
+
+    SQLWarning getWarnings();
+
+    void clearWarnings();
+
+    DbSettings getSettings();
+
+    void setColumnExtensionFactory(ColumnExtensionFactory columnExtensionFactory);
+
+    void attachExternalContext(Object context);
+
+    Object getExternalContext();
+
+    void addExternalConnection(String name, Connection connection);
+
+    void removeExternalConnection(String name);
+
+    void addExternalIndexResolver(String name, ExternalIndexResolver indexResolver);
+
+    void addExternalQueryExecutionReporter(ExternalQueryExecutionReporter reporter);
 }

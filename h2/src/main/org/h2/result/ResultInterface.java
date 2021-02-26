@@ -209,4 +209,13 @@ public interface ResultInterface extends AutoCloseable {
      * @return true if the row exists
      */
     boolean containsDistinct(Value[] values);
+
+    /**
+     * return extension information for column if exists otherwise return null
+     *
+     * @return the fetch size
+     */
+    String getExtension(int i);
+
+    String getColumnLabel(int i);
 }

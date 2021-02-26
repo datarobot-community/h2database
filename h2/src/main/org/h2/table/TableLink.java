@@ -5,6 +5,7 @@
  */
 package org.h2.table;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -14,9 +15,17 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Arrays;
 import java.util.List;
+
+import com.dullesopen.h2.external.ExternalIndexResolver;
+import com.dullesopen.h2.external.ExternalQueryExecutionReporter;
 import org.h2.api.ErrorCode;
 import org.h2.command.Prepared;
+import org.h2.engine.ColumnExtension;
+import org.h2.engine.ColumnExtensionFactory;
 import org.h2.engine.Session;
 import org.h2.engine.UndoLogRecord;
 import org.h2.index.Index;
@@ -31,6 +40,7 @@ import org.h2.util.MathUtils;
 import org.h2.util.New;
 import org.h2.util.StatementBuilder;
 import org.h2.util.StringUtils;
+import org.h2.util.JdbcUtils;
 import org.h2.value.DataType;
 import org.h2.value.Value;
 import org.h2.value.ValueDate;
@@ -49,7 +59,7 @@ public class TableLink extends Table {
 
     private final String originalSchema;
     private String driver, url, user, password, originalTable, qualifiedTableName;
-    private TableLinkConnection conn;
+    private BaseTableLinkConnection conn;
     private HashMap<String, PreparedStatement> preparedMap = New.hashMap();
     private final ArrayList<Index> indexes = New.arrayList();
     private final boolean emitUpdates;
@@ -61,18 +71,74 @@ public class TableLink extends Table {
     private boolean supportsMixedCaseIdentifiers;
     private boolean globalTemporary;
     private boolean readOnly;
+    private long precalculatedRowCount = -1;
 
+    /**
+     * the table in the linked database is actually a view, difference is important for DROP statement
+     */
+    private boolean view;
+
+    /**
+     * the local view created internally
+     * TODO. Since Oct 08 release this most probably can be done using standard H2 mechanism, it is in parentheses than
+     * TODO: it is local read only view, otherwise actual table
+     */
+    private boolean localView;
+
+    private final String externalConnectionName;
+
+    private final ColumnExtensionFactory columnExtensionFactory;
+    private ColumnExtension columnExtension;
+    ArrayList<ColumnLinkMetaData> columnLinkMetaData = New.arrayList();
+    private Set<String> keywords = new HashSet<>();
+
+    {
+        // populate keyword list with ANSI 2003 reserved keywords
+        keywords.addAll(Arrays.asList(
+                "ADD", "ALL", "ALLOCATE", "ALTER", "AND", "ANY", "ARE", "ARRAY", "AS", "ASENSITIVE", "ASYMMETRIC", "AT",
+                "ATOMIC", "AUTHORIZATION", "BEGIN", "BETWEEN", "BIGINT", "BINARY", "BLOB", "BOOLEAN", "BOTH", "BY",
+                "CALL", "CALLED", "CASCADED", "CASE", "CAST", "CHAR", "CHARACTER", "CHECK", "CLOB", "CLOSE", "COLLATE",
+                "COLUMN", "COMMIT", "CONDITION", "CONNECT", "CONSTRAINT", "CONTINUE", "CORRESPONDING", "CREATE",
+                "CROSS", "CUBE", "CURRENT", "CURRENT_DATE", "CURRENT_DEFAULT_TRANSFORM_GROUP", "CURRENT_PATH",
+                "CURRENT_ROLE", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_TRANSFORM_GROUP_FOR_TYPE", "CURRENT_USER",
+                "CURSOR", "CYCLE", "DATE", "DAY", "DEALLOCATE", "DEC", "DECIMAL", "DECLARE", "DEFAULT", "DELETE",
+                "DEREF", "DESCRIBE", "DETERMINISTIC", "DISCONNECT", "DISTINCT", "DO", "DOUBLE", "DROP", "DYNAMIC",
+                "EACH", "ELEMENT", "ELSE", "ELSEIF", "END", "ESCAPE", "EXCEPT", "EXEC", "EXECUTE", "EXISTS", "EXIT",
+                "EXTERNAL", "FALSE", "FETCH", "FILTER", "FLOAT", "FOR", "FOREIGN", "FREE", "FROM", "FULL", "FUNCTION",
+                "GET", "GLOBAL", "GRANT", "GROUP", "GROUPING", "HANDLER", "HAVING", "HOLD", "HOUR", "IDENTITY", "IF",
+                "IMMEDIATE", "IN", "INDICATOR", "INNER", "INOUT", "INPUT", "INSENSITIVE", "INSERT", "INT", "INTEGER",
+                "INTERSECT", "INTERVAL", "INTO", "IS", "ITERATE", "JOIN", "LANGUAGE", "LARGE", "LATERAL", "LEADING",
+                "LEAVE", "LEFT", "LIKE", "LOCAL", "LOCALTIME", "LOCALTIMESTAMP", "LOOP", "MATCH", "MEMBER", "MERGE",
+                "METHOD", "MINUTE", "MODIFIES", "MODULE", "MONTH", "MULTISET", "NATIONAL", "NATURAL", "NCHAR", "NCLOB",
+                "NEW", "NO", "NONE", "NOT", "NULL", "NUMERIC", "OF", "OLD", "ON", "ONLY", "OPEN", "OR", "ORDER", "OUT",
+                "OUTER", "OUTPUT", "OVER", "OVERLAPS", "PARAMETER", "PARTITION", "PRECISION", "PREPARE", "PRIMARY",
+                "PROCEDURE", "RANGE", "READS", "REAL", "RECURSIVE", "REF", "REFERENCES", "REFERENCING", "RELEASE",
+                "REPEAT", "RESIGNAL", "RESULT", "RETURN", "RETURNS", "REVOKE", "RIGHT", "ROLLBACK", "ROLLUP", "ROW",
+                "ROWS", "SAVEPOINT", "SCOPE", "SCROLL", "SEARCH", "SECOND", "SELECT", "SENSITIVE", "SESSION_USER",
+                "SET", "SIGNAL", "SIMILAR", "SMALLINT", "SOME", "SPECIFIC", "SPECIFICTYPE", "SQL", "SQLEXCEPTION",
+                "SQLSTATE", "SQLWARNING", "START", "STATIC", "SUBMULTISET", "SYMMETRIC", "SYSTEM", "SYSTEM_USER",
+                "TABLE", "TABLESAMPLE", "THEN", "TIME", "TIMESTAMP", "TIMEZONE_HOUR", "TIMEZONE_MINUTE", "TO",
+                "TRAILING", "TRANSLATION", "TREAT", "TRIGGER", "TRUE", "UNDO", "UNION", "UNIQUE", "UNKNOWN", "UNNEST",
+                "UNTIL", "UPDATE", "USER", "USING", "VALUE", "VALUES", "VARCHAR", "VARYING", "WHEN", "WHENEVER",
+                "WHERE", "WHILE", "WINDOW", "WITH", "WITHIN", "WITHOUT", "YEAR" ));
+    }
     public TableLink(Schema schema, int id, String name, String driver,
-            String url, String user, String password, String originalSchema,
-            String originalTable, boolean emitUpdates, boolean force) {
+                     String url, String user, String password,
+                     String externalConnectionName,
+                     String originalSchema, String originalTable,
+                     boolean emitUpdates, boolean force, boolean view,
+                     ColumnExtensionFactory columnExtensionFactory) {
         super(schema, id, name, false, true);
         this.driver = driver;
         this.url = url;
         this.user = user;
         this.password = password;
+        this.externalConnectionName = externalConnectionName;
         this.originalSchema = originalSchema;
-        this.originalTable = originalTable;
+        this.originalTable = decode(originalTable);
         this.emitUpdates = emitUpdates;
+        this.localView = view;
+        this.columnExtensionFactory = columnExtensionFactory;
         try {
             connect();
         } catch (DbException e) {
@@ -82,7 +148,7 @@ public class TableLink extends Table {
             Column[] cols = { };
             setColumns(cols);
             linkedIndex = new LinkedIndex(this, id, IndexColumn.wrap(cols),
-                    IndexType.createNonUnique(false));
+                    IndexType.createNonUnique(false), columnLinkMetaData);
             indexes.add(linkedIndex);
         }
     }
@@ -91,10 +157,41 @@ public class TableLink extends Table {
         connectException = null;
         for (int retry = 0;; retry++) {
             try {
-                conn = database.getLinkConnection(driver, url, user, password);
+                if (!StringUtils.isNullOrEmpty(externalConnectionName)) {
+                    final Connection c = database.getExternalConnection(externalConnectionName);
+                    if (c == null)
+                        throw DbException.get(ErrorCode.EXTERNAL_CONNECTION_NOT_FOUND, externalConnectionName);
+                    conn = new BaseTableLinkConnection() {
+                        @Override
+                        public void close(boolean force) {
+                            //noop
+                        }
+
+                        @Override
+                        public Connection getConnection() {
+                            return c;
+                        }
+                    };
+                } else
+                    conn = database.getLinkConnection(driver, url, user, password);
+                columnExtension = columnExtensionFactory == null ?
+                        null :
+                        columnExtensionFactory.create(conn.getConnection());
+
+                try {
+                    String[] list = conn.getConnection().getMetaData().getSQLKeywords().split(", *");
+                    for (String keyword : list) {
+                        keywords.add(keyword.toUpperCase());
+                    }
+                } catch (SQLException e) {
+                    //can not determine list of keyword, so potentially reserved words will not be quoted
+                }
                 synchronized (conn) {
                     try {
-                        readMetaData();
+                        if (localView)
+                            view();
+                        else
+                            readMetaData();
                         return;
                     } catch (Exception e) {
                         // could be SQLException or RuntimeException
@@ -118,79 +215,111 @@ public class TableLink extends Table {
         storesMixedCase = meta.storesMixedCaseIdentifiers();
         storesMixedCaseQuoted = meta.storesMixedCaseQuotedIdentifiers();
         supportsMixedCaseIdentifiers = meta.supportsMixedCaseIdentifiers();
-        ResultSet rs = meta.getTables(null, originalSchema, originalTable, null);
-        if (rs.next() && rs.next()) {
-            throw DbException.get(ErrorCode.SCHEMA_NAME_MUST_MATCH, originalTable);
+        ResultSet rs = null;
+        try {
+            rs = meta.getTables(null, originalSchema, originalTable, null);
+            if (rs.next()) {
+                view = rs.getString("TABLE_TYPE").equals("VIEW");
+
+                if (rs.next()) {
+                    throw DbException.get(ErrorCode.SCHEMA_NAME_MUST_MATCH, originalTable);
+                }
+            }
+
+        } finally {
+            JdbcUtils.closeSilently(rs);
         }
-        rs.close();
-        rs = meta.getColumns(null, originalSchema, originalTable, null);
-        int i = 0;
+        int i;
         ArrayList<Column> columnList = New.arrayList();
         HashMap<String, Column> columnMap = New.hashMap();
-        String catalog = null, schema = null;
-        while (rs.next()) {
-            String thisCatalog = rs.getString("TABLE_CAT");
-            if (catalog == null) {
-                catalog = thisCatalog;
+        try {
+            rs = meta.getColumns(null, originalSchema, originalTable, null);
+            i = 0;
+            String catalog = null, schema = null;
+            while (rs.next()) {
+                String thisCatalog = rs.getString("TABLE_CAT");
+                if (catalog == null) {
+                    catalog = thisCatalog;
+                }
+                String thisSchema = rs.getString("TABLE_SCHEM");
+                if (schema == null) {
+                    schema = thisSchema;
+                }
+                if (!StringUtils.equals(catalog, thisCatalog) ||
+                        !StringUtils.equals(schema, thisSchema)) {
+                    // if the table exists in multiple schemas or tables,
+                    // use the alternative solution
+                    columnMap.clear();
+                    columnList.clear();
+                    break;
+                }
+                String n = rs.getString("COLUMN_NAME");
+                n = convertColumnName(n);
+                int sqlType = rs.getInt("DATA_TYPE");
+                String sqlTypeName = rs.getString("TYPE_NAME");
+                long precision = rs.getInt("COLUMN_SIZE");
+                precision = convertPrecision(sqlType, precision);
+                int scale = rs.getInt("DECIMAL_DIGITS");
+                scale = convertScale(sqlType, scale);
+                int displaySize = MathUtils.convertLongToInt(precision);
+                int type = DataType.convertSQLTypeToValueType(sqlType, sqlTypeName);
+
+                Column col = columnExtension != null ?
+                        columnExtension.createColumn(n, sqlType, type, sqlTypeName,
+                                rs.getInt("COLUMN_SIZE"), rs.getInt("DECIMAL_DIGITS"), 0) :
+                        new Column(n, type, precision, scale, displaySize);
+                col.setTable(this, i++);
+                columnList.add(col);
+                columnLinkMetaData.add(new ColumnLinkMetaData(sqlType, sqlTypeName));
+                columnMap.put(n, col);
             }
-            String thisSchema = rs.getString("TABLE_SCHEM");
-            if (schema == null) {
-                schema = thisSchema;
+            rs.close();
+            if (originalTable.indexOf('.') < 0 && !StringUtils.isNullOrEmpty(schema)) {
+                qualifiedTableName = schema + "." + escape(originalTable);
+            } else {
+                qualifiedTableName = escape(originalTable);
             }
-            if (!StringUtils.equals(catalog, thisCatalog) ||
-                    !StringUtils.equals(schema, thisSchema)) {
-                // if the table exists in multiple schemas or tables,
-                // use the alternative solution
-                columnMap.clear();
-                columnList.clear();
-                break;
-            }
-            String n = rs.getString("COLUMN_NAME");
-            n = convertColumnName(n);
-            int sqlType = rs.getInt("DATA_TYPE");
-            String sqlTypeName = rs.getString("TYPE_NAME");
-            long precision = rs.getInt("COLUMN_SIZE");
-            precision = convertPrecision(sqlType, precision);
-            int scale = rs.getInt("DECIMAL_DIGITS");
-            scale = convertScale(sqlType, scale);
-            int displaySize = MathUtils.convertLongToInt(precision);
-            int type = DataType.convertSQLTypeToValueType(sqlType, sqlTypeName);
-            Column col = new Column(n, type, precision, scale, displaySize);
-            col.setTable(this, i++);
-            columnList.add(col);
-            columnMap.put(n, col);
-        }
-        rs.close();
-        if (originalTable.indexOf('.') < 0 && !StringUtils.isNullOrEmpty(schema)) {
-            qualifiedTableName = schema + "." + originalTable;
-        } else {
-            qualifiedTableName = originalTable;
+        } catch (SQLException e) {
+            // Teradata throws exception in the default configuration
+            if (e.getSQLState().equals("HY000") && e.getErrorCode() == 5315 && e.getMessage().contains("The user does not have SELECT access to DBC.UDTInfo.TypeName.")) {
+                qualifiedTableName = originalSchema == null ? originalTable : originalSchema + "." + originalTable;
+            } else
+                throw e;
         }
         // check if the table is accessible
 
         try (Statement stat = conn.getConnection().createStatement()) {
-            rs = stat.executeQuery("SELECT * FROM " +
-                    qualifiedTableName + " T WHERE 1=0");
             if (columnList.size() == 0) {
+                String sql = "SELECT * FROM " +
+                        qualifiedTableName + " T WHERE 1=0";
+                database.reportExternalQueryExecution(ExternalQueryExecutionReporter.Action.EXECUTE_QUERY,
+                        getSchema().getName(), sql, conn.getConnection());
+                rs = stat.executeQuery(sql);
                 // alternative solution
                 ResultSetMetaData rsMeta = rs.getMetaData();
                 for (i = 0; i < rsMeta.getColumnCount();) {
                     String n = rsMeta.getColumnName(i + 1);
                     n = convertColumnName(n);
                     int sqlType = rsMeta.getColumnType(i + 1);
+                    String sqlTypeName = rsMeta.getColumnTypeName(i + 1);
                     long precision = rsMeta.getPrecision(i + 1);
                     precision = convertPrecision(sqlType, precision);
                     int scale = rsMeta.getScale(i + 1);
                     scale = convertScale(sqlType, scale);
                     int displaySize = rsMeta.getColumnDisplaySize(i + 1);
                     int type = DataType.getValueTypeFromResultSet(rsMeta, i + 1);
-                    Column col = new Column(n, type, precision, scale, displaySize);
+
+                    Column col = columnExtension != null ?
+                            columnExtension.createColumn(n, sqlType, type, sqlTypeName,
+                                    rsMeta.getPrecision(i + 1), rsMeta.getScale(i + 1), displaySize) :
+                            new Column(n, type, precision, scale, displaySize);
                     col.setTable(this, i++);
                     columnList.add(col);
+                    columnLinkMetaData.add(new ColumnLinkMetaData(sqlType, sqlTypeName));
                     columnMap.put(n, col);
                 }
+                rs.close();
             }
-            rs.close();
         } catch (Exception e) {
             throw DbException.get(ErrorCode.TABLE_OR_VIEW_NOT_FOUND_1, e,
                     originalTable + "(" + e.toString() + ")");
@@ -200,53 +329,48 @@ public class TableLink extends Table {
         setColumns(cols);
         int id = getId();
         linkedIndex = new LinkedIndex(this, id, IndexColumn.wrap(cols),
-                IndexType.createNonUnique(false));
+                IndexType.createNonUnique(false), columnLinkMetaData);
         indexes.add(linkedIndex);
+
+        String pkName = "";
+        ArrayList<Column> list = New.arrayList();
         try {
             rs = meta.getPrimaryKeys(null, originalSchema, originalTable);
+            if (rs.next()) {
+                // the problem is, the rows are not sorted by KEY_SEQ
+                do {
+                    int idx = rs.getInt("KEY_SEQ");
+                    if (pkName == null) {
+                        pkName = rs.getString("PK_NAME");
+                    }
+                    while (list.size() < idx) {
+                        list.add(null);
+                    }
+                    String col = rs.getString("COLUMN_NAME");
+                    col = convertColumnName(col);
+                    Column column = columnMap.get(col);
+                    if (idx == 0) {
+                        // workaround for a bug in the SQLite JDBC driver
+                        list.add(column);
+                    } else {
+                        list.set(idx - 1, column);
+                    }
+                } while (rs.next());
+                addIndex(list, IndexType.createPrimaryKey(false, false));
+            }
         } catch (Exception e) {
             // Some ODBC bridge drivers don't support it:
             // some combinations of "DataDirect SequeLink(R) for JDBC"
             // http://www.datadirect.com/index.ssp
-            rs = null;
-        }
-        String pkName = "";
-        ArrayList<Column> list;
-        if (rs != null && rs.next()) {
-            // the problem is, the rows are not sorted by KEY_SEQ
-            list = New.arrayList();
-            do {
-                int idx = rs.getInt("KEY_SEQ");
-                if (pkName == null) {
-                    pkName = rs.getString("PK_NAME");
-                }
-                while (list.size() < idx) {
-                    list.add(null);
-                }
-                String col = rs.getString("COLUMN_NAME");
-                col = convertColumnName(col);
-                Column column = columnMap.get(col);
-                if (idx == 0) {
-                    // workaround for a bug in the SQLite JDBC driver
-                    list.add(column);
-                } else {
-                    list.set(idx - 1, column);
-                }
-            } while (rs.next());
-            addIndex(list, IndexType.createPrimaryKey(false, false));
-            rs.close();
-        }
-        try {
-            rs = meta.getIndexInfo(null, originalSchema, originalTable, false, true);
-        } catch (Exception e) {
-            // Oracle throws an exception if the table is not found or is a
-            // SYNONYM
+        } finally {
+            JdbcUtils.closeSilently(rs);
             rs = null;
         }
         String indexName = null;
-        list = New.arrayList();
         IndexType indexType = null;
-        if (rs != null) {
+        try {
+            rs = meta.getIndexInfo(null, originalSchema, originalTable, false, true);
+            list = New.arrayList();
             while (rs.next()) {
                 if (rs.getShort("TYPE") == DatabaseMetaData.tableIndexStatistic) {
                     // ignore index statistics
@@ -272,11 +396,26 @@ public class TableLink extends Table {
                 Column column = columnMap.get(col);
                 list.add(column);
             }
-            rs.close();
+        } catch (SQLException e) {
+            // Oracle throws an exception if the table is not found or is a
+            // SYNONYM
+        } finally {
+            JdbcUtils.closeSilently(rs);
         }
         if (indexName != null) {
             addIndex(list, indexType);
         }
+        ExternalIndexResolver indexResolver = externalConnectionName == null ? null :
+                database.getExternalIndexResolver(externalConnectionName);
+        if (indexResolver != null) {
+            indexes.addAll(indexResolver.getIndexes(this));
+        }
+    }
+
+    private String escape(String name) {
+        return keywords.contains(name.toUpperCase()) ?
+                '"' + name + '"' :
+                name;
     }
 
     private static long convertPrecision(int sqlType, long precision) {
@@ -346,7 +485,7 @@ public class TableLink extends Table {
         }
         Column[] cols = new Column[list.size()];
         list.toArray(cols);
-        Index index = new LinkedIndex(this, 0, IndexColumn.wrap(cols), indexType);
+        Index index = new LinkedIndex(this, 0, IndexColumn.wrap(cols), indexType, columnLinkMetaData);
         indexes.add(index);
     }
 
@@ -370,17 +509,27 @@ public class TableLink extends Table {
         if (comment != null) {
             buff.append(" COMMENT ").append(StringUtils.quoteStringSQL(comment));
         }
-        buff.append('(').
-            append(StringUtils.quoteStringSQL(driver)).
-            append(", ").
-            append(StringUtils.quoteStringSQL(url)).
-            append(", ").
-            append(StringUtils.quoteStringSQL(user)).
-            append(", ").
-            append(StringUtils.quoteStringSQL(password)).
-            append(", ").
-            append(StringUtils.quoteStringSQL(originalTable)).
-            append(')');
+        if (externalConnectionName != null) {
+            buff.append(" WITH EXTERNAL CONNECTION ").append(StringUtils.quoteStringSQL(comment));
+            buff.append('(').
+                    append(StringUtils.quoteStringSQL(externalConnectionName)).
+                    append(", ").
+                    append(StringUtils.quoteStringSQL(encode(originalTable))).
+                    append(')');
+        }
+        else {
+            buff.append('(').
+                    append(StringUtils.quoteStringSQL(driver)).
+                    append(", ").
+                    append(StringUtils.quoteStringSQL(url)).
+                    append(", ").
+                    append(StringUtils.quoteStringSQL(user)).
+                    append(", ").
+                    append(StringUtils.quoteStringSQL(password)).
+                    append(", ").
+                    append(StringUtils.quoteStringSQL(encode(originalTable))).
+                    append(')');
+        }
         if (emitUpdates) {
             buff.append(" EMIT UPDATES");
         }
@@ -393,8 +542,8 @@ public class TableLink extends Table {
 
     @Override
     public Index addIndex(Session session, String indexName, int indexId,
-            IndexColumn[] cols, IndexType indexType, boolean create,
-            String indexComment) {
+                          IndexColumn[] cols, IndexType indexType, boolean create,
+                          String indexComment) {
         throw DbException.getUnsupportedException("LINK");
     }
 
@@ -434,6 +583,10 @@ public class TableLink extends Table {
 
     @Override
     public void close(Session session) {
+        if (preparedMap != null)
+            for (PreparedStatement statement : preparedMap.values()) {
+                JdbcUtils.closeSilently(statement);
+            }
         if (conn != null) {
             try {
                 conn.close(false);
@@ -446,9 +599,14 @@ public class TableLink extends Table {
     @Override
     public synchronized long getRowCount(Session session) {
         //The foo alias is used to support the PostgreSQL syntax
-        String sql = "SELECT COUNT(*) FROM " + qualifiedTableName + " as foo";
+        // very ineffective for views
+        if (precalculatedRowCount > -1)
+            return precalculatedRowCount;
+        String sql = localView ?
+                "SELECT COUNT (*) FROM (" + qualifiedTableName + ")"
+                : "SELECT COUNT(*) FROM " + qualifiedTableName + " as foo";
         try {
-            PreparedStatement prep = execute(sql, null, false);
+            PreparedStatement prep = execute(sql, null, false, null);
             ResultSet rs = prep.getResultSet();
             rs.next();
             long count = rs.getLong(1);
@@ -474,7 +632,7 @@ public class TableLink extends Table {
     }
 
     public String getQualifiedTable() {
-        return qualifiedTableName;
+        return localView ? originalTable : qualifiedTableName;
     }
 
     /**
@@ -487,16 +645,23 @@ public class TableLink extends Table {
      * @return the prepared statement, or null if it is re-used
      */
     public PreparedStatement execute(String sql, ArrayList<Value> params,
-            boolean reusePrepared) {
+            boolean reusePrepared, List<ColumnLinkMetaData> paramMetaData) {
         if (conn == null) {
             throw connectException;
         }
-        for (int retry = 0;; retry++) {
+        for (int retry = 0; ; retry++) {
             try {
                 synchronized (conn) {
                     PreparedStatement prep = preparedMap.remove(sql);
+                    Connection connection = conn.getConnection();
                     if (prep == null) {
-                        prep = conn.getConnection().prepareStatement(sql);
+                        database.reportExternalQueryExecution(ExternalQueryExecutionReporter.Action.PREPARE,
+                                getSchema().getName(), sql, connection);
+                        prep = connection.prepareStatement(sql);
+                        prep.setFetchSize(database.getSettings().linkFetchSize);
+                    } else {
+                        database.reportExternalQueryExecution(ExternalQueryExecutionReporter.Action.REUSE,
+                                getSchema().getName(), sql, connection);
                     }
                     if (trace.isDebugEnabled()) {
                         StatementBuilder buff = new StatementBuilder();
@@ -516,9 +681,14 @@ public class TableLink extends Table {
                     if (params != null) {
                         for (int i = 0, size = params.size(); i < size; i++) {
                             Value v = params.get(i);
-                            v.set(prep, i + 1);
+                            if (columnExtension != null)
+                                columnExtension.bindParameterValue(prep, v, i + 1, paramMetaData.get(i).sqlType, paramMetaData.get(i).sqlTypeName);
+                            else
+                                v.set(prep, i + 1);
                         }
                     }
+                    database.reportExternalQueryExecution(ExternalQueryExecutionReporter.Action.EXECUTE,
+                            getSchema().getName(), sql, connection);
                     prep.execute();
                     if (reusePrepared) {
                         reusePreparedStatement(prep, sql);
@@ -568,7 +738,7 @@ public class TableLink extends Table {
 
     @Override
     public TableType getTableType() {
-        return TableType.TABLE_LINK;
+        return localView ? TableType.VIEW : TableType.TABLE_LINK;
     }
 
     @Override
@@ -583,7 +753,7 @@ public class TableLink extends Table {
     }
 
     public boolean isOracle() {
-        return url.startsWith("jdbc:oracle:");
+        return url != null && url.startsWith("jdbc:oracle:");
     }
 
     @Override
@@ -708,4 +878,121 @@ public class TableLink extends Table {
         return null;
     }
 
+    public static String encode(String select) {
+        return select.replace("'", "\\q");
+    }
+
+    private String decode(String select) {
+        return select.replace("\\q", "'");
+    }
+
+    public boolean isView() {
+        return localView;
+    }
+
+
+    private void view() throws SQLException {
+        Connection connection = conn.getConnection();
+        DatabaseMetaData meta = connection.getMetaData();
+        storesLowerCase = meta.storesLowerCaseIdentifiers();
+        storesMixedCase = meta.storesMixedCaseIdentifiers();
+        supportsMixedCaseIdentifiers = meta.supportsMixedCaseIdentifiers();
+
+        int i = 0;
+        ArrayList<Column> columnList = New.arrayList();
+        HashMap<String, Column> columnMap = New.hashMap();
+
+        database.reportExternalQueryExecution(ExternalQueryExecutionReporter.Action.PREPARE,
+                getSchema().getName(), originalTable, connection);
+        PreparedStatement statement = connection.prepareStatement(originalTable);
+        String db = connection.getMetaData().getDatabaseProductName();
+        // workaround for Apache Hive, which does not support metadata
+        // for prepared query.
+        ResultSetMetaData rs;
+        ResultSet query;
+        boolean hive = db.equals("Apache Hive");
+        if (hive) {
+            database.reportExternalQueryExecution(ExternalQueryExecutionReporter.Action.EXECUTE_QUERY,
+                    getSchema().getName(), originalTable, connection);
+            query = statement.executeQuery();
+            rs = query.getMetaData();
+        } else {
+            query = null;
+            rs = statement.getMetaData();
+        }
+
+        for (i = 1; i <= rs.getColumnCount(); i++) {
+            String n = rs.getColumnName(i);
+            if (hive) {
+                int dot = n.indexOf(".");
+                if (dot > 0) {
+                    n = n.substring(dot + 1);
+                }
+            }
+            String mixedCaseName = n;
+            n = convertColumnName(n);
+            int sqlType = rs.getColumnType(i);
+            String sqlTypeName = rs.getColumnTypeName(i);
+            long precision = rs.getPrecision(i);
+            int scale = rs.getScale(i);
+            int type = DataType.convertSQLTypeToValueType(sqlType, sqlTypeName);
+            int displaySize = rs.getColumnDisplaySize(i);
+
+            Column col = columnExtension != null ?
+                    columnExtension.createColumn(n, sqlType, type, sqlTypeName, precision, scale, displaySize) :
+                    new Column(n, type, precision, scale, displaySize);
+            if (!n.equals(mixedCaseName))
+                col.setMixedCaseName(mixedCaseName);
+            col.setTable(this, i - 1);
+            columnList.add(col);
+            columnLinkMetaData.add(new ColumnLinkMetaData(sqlType, sqlTypeName));
+            columnMap.put(n, col);
+        }
+
+        if (query != null)
+            query.close();
+        statement.close();
+        Column[] cols = new Column[columnList.size()];
+        columnList.toArray(cols);
+        setColumns(cols);
+        int id = getId();
+        linkedIndex = new LinkedIndex(this, id, IndexColumn.wrap(cols), IndexType.createNonUnique(false), columnLinkMetaData);
+        indexes.add(linkedIndex);
+    }
+
+    /**
+     * Sets the actual row count of a linked table if there is a chance to know it.
+     * It can be set in {@link ExternalIndexResolver#getIndexes(TableLink)} method.
+     *
+     * @param precalculatedRowCount actual row count of a linked table
+     */
+    public void setPrecalculatedRowCount(long precalculatedRowCount) {
+        this.precalculatedRowCount = precalculatedRowCount;
+    }
+
+    /**
+     * This method is used for more accurate plan cost calculation.
+     *
+     * @return rowCount field if it was set before, and 0 otherwise
+     */
+    public long getPrecalculatedRowCount() {
+        return precalculatedRowCount < 0 ? 0 : precalculatedRowCount;
+    }
+
+    public ColumnExtension getColumnExtension() {
+        return columnExtension;
+    }
+
+    /**
+     * information about the column from RDBMS
+     */
+    public static class ColumnLinkMetaData {
+        final int sqlType;
+        final String sqlTypeName;
+
+        ColumnLinkMetaData(int sqlType, String sqlTypeName) {
+            this.sqlType = sqlType;
+            this.sqlTypeName = sqlTypeName;
+        }
+    }
 }

@@ -21,6 +21,7 @@ public class CreateLinkedTable extends SchemaCommand {
 
     private String tableName;
     private String driver, url, user, password, originalSchema, originalTable;
+    private String externalConnectionName;
     private boolean ifNotExists;
     private String comment;
     private boolean emitUpdates;
@@ -28,9 +29,11 @@ public class CreateLinkedTable extends SchemaCommand {
     private boolean temporary;
     private boolean globalTemporary;
     private boolean readOnly;
+    private boolean view;
 
-    public CreateLinkedTable(Session session, Schema schema) {
+    public CreateLinkedTable(Session session, Schema schema, boolean view) {
         super(session, schema);
+        this.view = view;
     }
 
     public void setTableName(String tableName) {
@@ -75,7 +78,7 @@ public class CreateLinkedTable extends SchemaCommand {
         }
         int id = getObjectId();
         TableLink table = getSchema().createTableLink(id, tableName, driver, url,
-                user, password, originalSchema, originalTable, emitUpdates, force);
+                user, password, externalConnectionName, originalSchema, originalTable, emitUpdates, force, view);
         table.setTemporary(temporary);
         table.setGlobalTemporary(globalTemporary);
         table.setComment(comment);
@@ -121,4 +124,7 @@ public class CreateLinkedTable extends SchemaCommand {
         return CommandInterface.CREATE_LINKED_TABLE;
     }
 
+    public void setExternalConnectionName(String name) {
+        this.externalConnectionName=name;
+    }
 }

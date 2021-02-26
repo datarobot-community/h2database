@@ -72,6 +72,7 @@ public class Column {
     private int displaySize;
     private Table table;
     private String name;
+    private String mixedCaseName;
     private int columnId;
     private boolean nullable = true;
     private Expression defaultExpression;
@@ -90,6 +91,8 @@ public class Column {
     private String comment;
     private boolean primaryKey;
     private boolean visible = true;
+
+    private String extension;
 
     public Column(String name, int type) {
         this(name, type, -1, -1, -1, null);
@@ -361,6 +364,8 @@ public class Column {
         }
         value = value.convertScale(mode.convertOnlyToSmallerScale, scale);
         if (precision > 0) {
+            if (mode.truncateStringValue)
+                value=value.convertPrecision(precision,true);
             if (!value.checkPrecision(precision)) {
                 String s = value.getTraceSQL();
                 if (s.length() > 127) {
@@ -461,7 +466,7 @@ public class Column {
     public String getCreateSQL() {
         StringBuilder buff = new StringBuilder();
         if (name != null) {
-            buff.append(Parser.quoteIdentifier(name)).append(' ');
+            buff.append(mixedCaseName != null ? mixedCaseName : Parser.quoteIdentifier(name)).append(' ');
         }
         if (originalSQL != null) {
             buff.append(originalSQL);
@@ -523,6 +528,11 @@ public class Column {
         }
         if (checkConstraint != null) {
             buff.append(" CHECK ").append(checkConstraintSQL);
+        }
+        if (extension != null) {
+            buff.append(" EXTENSION ");
+            buff.append(" ");
+            buff.append(StringUtils.quoteStringSQL(extension));
         }
         return buff.toString();
     }
@@ -811,6 +821,24 @@ public class Column {
         selectivity = source.selectivity;
         primaryKey = source.primaryKey;
         visible = source.visible;
+        mixedCaseName = source.mixedCaseName;
+        extension = source.extension;
+    }
+
+    public void setExtension(String extension) {
+        this.extension = extension;
+    }
+
+    public String getExtension() {
+        return extension;
+    }
+
+    public void setMixedCaseName(String mixedCaseName) {
+        this.mixedCaseName = mixedCaseName;
+    }
+
+    public String getMixedCaseName() {
+        return mixedCaseName ;
     }
 
 }

@@ -46,8 +46,13 @@ public class FunctionAlias extends SchemaObjectBase {
     private boolean deterministic;
     private boolean bufferResultSetToLocalTemp = true;
 
+    private int method;
+    private long precision;
+    private final Mode mode;
+
     private FunctionAlias(Schema schema, int id, String name) {
         initSchemaObjectBase(schema, id, name, Trace.FUNCTION);
+        mode = schema.getDatabase().getMode();
     }
 
     /**
@@ -59,11 +64,12 @@ public class FunctionAlias extends SchemaObjectBase {
      * @param javaClassMethod the class and method name
      * @param force create the object even if the class or method does not exist
      * @param bufferResultSetToLocalTemp whether the result should be buffered
+     * @param force           create the object even if the class or method does not exist
      * @return the database object
      */
     public static FunctionAlias newInstance(
             Schema schema, int id, String name, String javaClassMethod,
-            boolean force, boolean bufferResultSetToLocalTemp) {
+            boolean force, boolean bufferResultSetToLocalTemp, int method, long precision) {
         FunctionAlias alias = new FunctionAlias(schema, id, name);
         int paren = javaClassMethod.indexOf('(');
         int lastDot = javaClassMethod.lastIndexOf('.', paren < 0 ?
@@ -75,6 +81,8 @@ public class FunctionAlias extends SchemaObjectBase {
         alias.methodName = javaClassMethod.substring(lastDot + 1);
         alias.bufferResultSetToLocalTemp = bufferResultSetToLocalTemp;
         alias.init(force);
+        alias.method = method;
+        alias.precision = precision;
         return alias;
     }
 
@@ -129,7 +137,7 @@ public class FunctionAlias extends SchemaObjectBase {
             compiler.setSource(fullClassName, source);
             try {
                 Method m = compiler.getMethod(fullClassName);
-                JavaMethod method = new JavaMethod(m, 0);
+                JavaMethod method = new JavaMethod(m, 0, mode);
                 javaMethods = new JavaMethod[] {
                         method
                 };
@@ -152,7 +160,7 @@ public class FunctionAlias extends SchemaObjectBase {
             }
             if (m.getName().equals(methodName) ||
                     getMethodSignature(m).equals(methodName)) {
-                JavaMethod javaMethod = new JavaMethod(m, i);
+                JavaMethod javaMethod = new JavaMethod(m, i, mode);
                 for (JavaMethod old : list) {
                     if (old.getParameterCount() == javaMethod.getParameterCount()) {
                         throw DbException.get(ErrorCode.
@@ -347,10 +355,12 @@ public class FunctionAlias extends SchemaObjectBase {
         private boolean varArgs;
         private Class<?> varArgClass;
         private int paramCount;
+        private final Mode mode;
 
-        JavaMethod(Method method, int id) {
+        JavaMethod(Method method, int id, Mode mode) {
             this.method = method;
             this.id = id;
+            this.mode = mode;
             Class<?>[] paramClasses = method.getParameterTypes();
             paramCount = paramClasses.length;
             if (paramCount > 0) {
@@ -450,9 +460,22 @@ public class FunctionAlias extends SchemaObjectBase {
                             // otherwise the function can't be called at all.
                             o = DataType.getDefaultForPrimitiveType(paramClass);
                         } else {
-                            // NULL for a java primitive: return NULL
-                            return ValueNull.INSTANCE;
+                            if (SysProperties.DOUBLE_NAN_SAME_AS_NULL) {
+                                if (paramClass.equals(Double.TYPE)) {
+                                    o = Double.NaN;
+                                } else if (paramClass.equals(Float.TYPE)) {
+                                    o = Float.NaN;
+                                } else
+                                    throw DbException.get(ErrorCode.NULL_FOR_JAVA_PRIMITIVE, method.toString(), String.valueOf(a));
+                            } else {
+                                // NULL for a java primitive: return NULL
+                                return ValueNull.INSTANCE;
+                            }
                         }
+                    } else if (SysProperties.DOUBLE_NAN_SAME_AS_NULL && paramClass.equals(String.class)) {
+                        Value.Convert convert = Value.getConvert(args[a].getType(), Value.STRING);
+                        if (convert != null)
+                            o = convert.convertTo(v, Value.STRING).getString();
                     }
                 } else {
                     if (!paramClass.isAssignableFrom(o.getClass()) && !paramClass.isPrimitive()) {
@@ -496,6 +519,21 @@ public class FunctionAlias extends SchemaObjectBase {
                 if (Value.class.isAssignableFrom(method.getReturnType())) {
                     return (Value) returnValue;
                 }
+                if (SysProperties.DOUBLE_NAN_SAME_AS_NULL && returnValue instanceof Double) {
+                    double d = (Double) returnValue;
+                    if (Double.isNaN(d))
+                        return ValueNull.INSTANCE;
+                }
+                if (mode.spaceIsNull && returnValue instanceof String) {
+                    String s = (String) returnValue;
+                    switch (s.length()) {
+                        case 0:
+                            return ValueNull.INSTANCE;
+                        case 1:
+                            if (s.charAt(0) == ' ')
+                                return ValueNull.INSTANCE;
+                    }
+                }
                 Value ret = DataType.convertToValue(session, returnValue, dataType);
                 return ret.convertTo(dataType);
             } finally {
@@ -537,6 +575,14 @@ public class FunctionAlias extends SchemaObjectBase {
             return id - m.id;
         }
 
+    }
+
+    public int getMethod() {
+        return method;
+    }
+
+    public long getPrecision() {
+        return precision;
     }
 
 }

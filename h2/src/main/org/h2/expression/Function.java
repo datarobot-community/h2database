@@ -13,6 +13,8 @@ import java.io.Reader;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Date;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -29,6 +31,7 @@ import org.h2.engine.Constants;
 import org.h2.engine.Database;
 import org.h2.engine.Mode;
 import org.h2.engine.Session;
+import org.h2.engine.SysProperties;
 import org.h2.message.DbException;
 import org.h2.mvstore.DataUtils;
 import org.h2.schema.Schema;
@@ -105,7 +108,8 @@ public class Function extends Expression implements FunctionCall {
             SECOND = 114, WEEK = 115, YEAR = 116, CURRENT_DATE = 117,
             CURRENT_TIME = 118, CURRENT_TIMESTAMP = 119, EXTRACT = 120,
             FORMATDATETIME = 121, PARSEDATETIME = 122, ISO_YEAR = 123,
-            ISO_WEEK = 124, ISO_DAY_OF_WEEK = 125;
+            ISO_WEEK = 124, ISO_DAY_OF_WEEK = 125,
+            DATE_ADD_EXTENDED = 126;
 
     public static final int DATABASE = 150, USER = 151, CURRENT_USER = 152,
             IDENTITY = 153, SCOPE_IDENTITY = 154, AUTOCOMMIT = 155,
@@ -153,6 +157,7 @@ public class Function extends Expression implements FunctionCall {
     private int displaySize;
     private final Database database;
 
+    public static final int IS_NULL = 601;
     static {
         // DATE_PART
         DATE_PART.put("SQL_TSI_YEAR", Calendar.YEAR);
@@ -328,10 +333,15 @@ public class Function extends Expression implements FunctionCall {
                 VAR_ARGS, Value.TIMESTAMP);
         addFunctionNotDeterministic("NOW", NOW,
                 VAR_ARGS, Value.TIMESTAMP);
-        addFunction("DATEADD", DATE_ADD,
-                3, Value.TIMESTAMP);
-        addFunction("TIMESTAMPADD", DATE_ADD,
-                3, Value.LONG);
+        if (!SysProperties.DATE_ADD_EXTENDED) {
+            addFunction("DATEADD", DATE_ADD,
+                    3, Value.TIMESTAMP);
+            addFunction("TIMESTAMPADD", DATE_ADD,
+                    3, Value.LONG);
+        } else {
+            addFunction("DATEADD2", DATE_ADD_EXTENDED,
+                    3, 0);
+        }
         addFunction("DATEDIFF", DATE_DIFF,
                 3, Value.LONG);
         addFunction("TIMESTAMPDIFF", DATE_DIFF,
@@ -486,6 +496,9 @@ public class Function extends Expression implements FunctionCall {
 
         // ON DUPLICATE KEY VALUES function
         addFunction("VALUES", VALUES, 1, Value.NULL, false, true, false);
+
+        addFunctionWithNull("IS_NULL", IS_NULL, 1, Value.NULL);
+
     }
 
     protected Function(Database database, FunctionInfo info) {
@@ -752,6 +765,9 @@ public class Function extends Expression implements FunctionCall {
             }
             break;
         }
+        case IS_NULL:
+                return ValueBoolean.get(v0 == ValueNull.INSTANCE );
+
         case HEXTORAW:
             result = ValueString.get(hexToRaw(v0.getString()),
                     database.getMode().treatEmptyStringsAsNull);
@@ -1483,6 +1499,9 @@ public class Function extends Expression implements FunctionCall {
             result = ValueTimestamp.get(dateadd(
                     v0.getString(), v1.getLong(), v2.getTimestamp()));
             break;
+        case DATE_ADD_EXTENDED:
+                result = dateAddExtended(v0.getString(), v1.getDouble(), v2);
+                break;
         case DATE_DIFF:
             result = ValueLong.get(datediff(
                     v0.getString(), v1.getTimestamp(), v2.getTimestamp()));
@@ -2491,6 +2510,14 @@ public class Function extends Expression implements FunctionCall {
             d = MathUtils.convertLongToInt(p);
             break;
         }
+        case DATE_ADD_EXTENDED: {
+            t = args[2].getType();
+            DataType type = DataType.getDataType(t);
+            p = PRECISION_UNKNOWN;
+            d = 0;
+            s = type.defaultScale;
+            break;
+        }
         default:
             t = info.returnDataType;
             DataType type = DataType.getDataType(t);
@@ -2570,6 +2597,9 @@ public class Function extends Expression implements FunctionCall {
                     precision = Long.MAX_VALUE;
                 }
             }
+            Integer overwrite = database.getMode().concatReturnSize;
+            if (overwrite != null)
+                precision = overwrite;
             break;
         case HEXTORAW:
             precision = (args[0].getPrecision() + 3) / 4;
@@ -2800,4 +2830,33 @@ public class Function extends Expression implements FunctionCall {
         return info.bufferResultSetToLocalTemp;
     }
 
+    private static Value dateAddExtended(String part, double count, Value v) {
+
+        switch (v.getType()) {
+            case Value.DATE: {
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(v.getDate());
+                calendar.add(Calendar.DAY_OF_MONTH, (int) count);
+                long t = calendar.getTime().getTime();
+                return ValueDate.get(new Date(t));
+            }
+            case Value.TIME: {
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(v.getTime());
+                calendar.add(Calendar.SECOND, (int) count);
+                long t = calendar.getTime().getTime();
+                return ValueTime.get(new Time(t));
+            }
+            case Value.TIMESTAMP: {
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(v.getTimestamp());
+                calendar.add(Calendar.SECOND, (int) count);
+                long t = calendar.getTime().getTime();
+                return ValueTimestamp.get(new Timestamp(t));
+            }
+            default:
+                DbException.throwInternalError("type=" + v.getType());
+                return null;
+        }
+    }
 }

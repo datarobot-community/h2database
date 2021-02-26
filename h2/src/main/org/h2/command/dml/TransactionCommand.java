@@ -111,6 +111,9 @@ public class TransactionCommand extends Prepared {
             session.close();
             break;
         }
+        case CommandInterface.FLUSH_SCHEMAS:
+            session.flushSchemas();
+            break;
         default:
             DbException.throwInternalError("type=" + type);
         }

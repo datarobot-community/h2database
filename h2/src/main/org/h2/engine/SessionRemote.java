@@ -7,7 +7,12 @@ package org.h2.engine;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.SQLWarning;
 import java.util.ArrayList;
+
+import com.dullesopen.h2.external.ExternalIndexResolver;
+import com.dullesopen.h2.external.ExternalQueryExecutionReporter;
 import org.h2.api.DatabaseEventListener;
 import org.h2.api.ErrorCode;
 import org.h2.api.JavaObjectSerializer;
@@ -872,5 +877,48 @@ public class SessionRemote extends SessionWithState implements DataHandler {
     @Override
     public void setCurrentSchemaName(String schema) {
         throw DbException.getUnsupportedException("setSchema && remote session");
+    }
+
+    @Override
+    public SQLWarning getWarnings() {
+        return null;
+    }
+
+    @Override
+    public void clearWarnings() {
+    }
+
+    @Override
+    public void setColumnExtensionFactory(ColumnExtensionFactory columnExtensionFactory) {
+    }
+
+    @Override
+    public void attachExternalContext(Object context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Object getExternalContext() {
+        throw new UnsupportedOperationException();
+    }
+
+    public void addExternalConnection(String name,
+                                      Connection connection) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void removeExternalConnection(String name) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void addExternalIndexResolver(String name, ExternalIndexResolver indexResolver) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void addExternalQueryExecutionReporter(ExternalQueryExecutionReporter reporter) {
+        throw new UnsupportedOperationException();
     }
 }

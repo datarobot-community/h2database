@@ -467,6 +467,18 @@ public interface CommandInterface {
     int ALTER_TABLE_ALTER_COLUMN_VISIBILITY = 87;
 
     /**
+     * The conversion statement
+     */
+    int CONVERSION = 700;
+
+
+    /**
+     * Flush external and linked schemas
+     */
+    int FLUSH_SCHEMAS = 900;
+
+
+    /**
      * Get command type.
      *
      * @return one of the constants above

@@ -124,6 +124,11 @@ public class UserAggregate extends DbObjectBase {
         public Object getResult() throws SQLException {
             return aggregateFunction.getResult();
         }
+
+        public int getPrecision(int[] precisions, long[] longs) throws SQLException {
+            return Integer.MAX_VALUE;
+        }
+
     }
 
 }

@@ -14,6 +14,8 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Properties;
 import org.h2.engine.Constants;
+import org.h2.engine.DbSettings;
+import org.h2.engine.Session;
 import org.h2.engine.SysProperties;
 import org.h2.message.DbException;
 import org.h2.message.Trace;
@@ -30,9 +32,13 @@ public class JdbcDatabaseMetaData extends TraceObject implements
 
     private final JdbcConnection conn;
 
+    private final boolean mixedCase;
+
     JdbcDatabaseMetaData(JdbcConnection conn, Trace trace, int id) {
         setTrace(trace, TraceObject.DATABASE_META_DATA, id);
         this.conn = conn;
+        DbSettings settings = conn.getSession().getSettings();
+        mixedCase = settings != null && settings.mixedCase;
     }
 
     /**
@@ -2439,7 +2445,7 @@ public class JdbcDatabaseMetaData extends TraceObject implements
     @Override
     public boolean supportsMixedCaseIdentifiers() {
         debugCodeCall("supportsMixedCaseIdentifiers");
-        return false;
+        return mixedCase;
     }
 
     /**
@@ -2471,7 +2477,7 @@ public class JdbcDatabaseMetaData extends TraceObject implements
         if (m.equals("MySQL")) {
             return false;
         }
-        return true;
+        return !mixedCase;
     }
 
     /**
@@ -2499,7 +2505,7 @@ public class JdbcDatabaseMetaData extends TraceObject implements
     @Override
     public boolean storesMixedCaseIdentifiers() {
         debugCodeCall("storesMixedCaseIdentifiers");
-        return false;
+        return mixedCase;
     }
 
     /**

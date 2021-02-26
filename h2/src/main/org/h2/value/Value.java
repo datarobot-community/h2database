@@ -5,6 +5,13 @@
  */
 package org.h2.value;
 
+import org.h2.api.ErrorCode;
+import org.h2.engine.Constants;
+import org.h2.engine.SysProperties;
+import org.h2.message.DbException;
+import org.h2.store.DataHandler;
+import org.h2.tools.SimpleResultSet;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Reader;
@@ -184,6 +191,12 @@ public abstract class Value {
             BigDecimal.valueOf(Long.MAX_VALUE);
     private static final BigDecimal MIN_LONG_DECIMAL =
             BigDecimal.valueOf(Long.MIN_VALUE);
+
+    public interface Convert {
+        Value convertTo(Value from, int to);
+    }
+
+    static Convert conversions[][] = new Convert[TYPE_COUNT + 1][TYPE_COUNT + 1];
 
     /**
      * Get the SQL expression for this value.
@@ -508,9 +521,11 @@ public abstract class Value {
      * Divide by a value and return the result.
      *
      * @param v the value to divide by
+     * @param noninteger force division of integer numbers as double
+     * @param allowZeroDivide
      * @return the result
      */
-    public Value divide(@SuppressWarnings("unused") Value v) {
+    public Value divide(@SuppressWarnings("unused") Value v, boolean noninteger, boolean allowZeroDivide) {
         throw throwUnsupportedExceptionForType("/");
     }
 
@@ -546,6 +561,12 @@ public abstract class Value {
         if (getType() == targetType) {
             return this;
         }
+
+        Convert convert = getConvert(getType(), targetType);
+        if (convert != null) {
+            return convert.convertTo(this, targetType);
+        }
+
         try {
             // decimal conversion
             switch (targetType) {
@@ -998,6 +1019,10 @@ public abstract class Value {
         }
     }
 
+    public static Convert getConvert(int sourceType, int targetType) {
+        return sourceType <= TYPE_COUNT && targetType <= TYPE_COUNT ? conversions[sourceType][targetType] : null;
+    }
+
     /**
      * Compare this value against another value given that the values are of the
      * same data type.
@@ -1254,5 +1279,15 @@ public abstract class Value {
     public interface ValueBlob {
         // this is a marker interface
     }
+
+    public static void addConversion(int fromType, int toType, Convert convert) {
+        /// check for index out of range
+        conversions[fromType][toType] = convert;
+    }
+
+    public Value aggregate(Value v) {
+        return add(v);
+    }
+
 
 }

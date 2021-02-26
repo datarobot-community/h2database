@@ -18,6 +18,7 @@ import org.h2.value.Value;
 public abstract class LazyResult implements ResultInterface {
 
     private Expression[] expressions;
+    private final String sql;
     private int rowId = -1;
     private Value[] currentRow;
     private Value[] nextRow;
@@ -25,8 +26,9 @@ public abstract class LazyResult implements ResultInterface {
     private boolean afterLast;
     private int limit;
 
-    public LazyResult(Expression[] expressions) {
+    public LazyResult(Expression[] expressions, String sql) {
         this.expressions = expressions;
+        this.sql = sql;
     }
 
     public void setLimit(int limit) {
@@ -72,13 +74,19 @@ public abstract class LazyResult implements ResultInterface {
 
     @Override
     public boolean hasNext() {
-        if (closed || afterLast) {
-            return false;
+        try {
+            if (closed || afterLast) {
+                return false;
+            }
+            if (nextRow == null && (limit <= 0 || rowId + 1 < limit)) {
+                nextRow = fetchNextRow();
+            }
+            return nextRow != null;
+        } catch (DbException e) {
+            if (sql != null)
+                e.addSQL(sql);
+            throw e;
         }
-        if (nextRow == null && (limit <= 0 || rowId + 1 < limit)) {
-            nextRow = fetchNextRow();
-        }
-        return nextRow != null;
     }
 
     /**
@@ -135,7 +143,8 @@ public abstract class LazyResult implements ResultInterface {
 
     @Override
     public String getColumnName(int i) {
-        return expressions[i].getColumnName();
+        String mixed = expressions[i].getMixedCaseName();
+        return mixed != null ? mixed : expressions[i].getColumnName();
     }
 
     @Override
@@ -191,5 +200,15 @@ public abstract class LazyResult implements ResultInterface {
         // evaluation when this call is needed:
         // WHERE x IN (SELECT ...).
         throw DbException.throwInternalError();
+    }
+
+    @Override
+    public String getExtension(int i) {
+        return expressions[i].getExtension();
+    }
+
+    @Override
+    public String getColumnLabel(int i) {
+        return expressions[i].getColumnLabel();
     }
 }

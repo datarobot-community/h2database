@@ -756,6 +756,11 @@ public class TestSpatial extends TestBase {
         public Object getResult() throws SQLException {
             return new GeometryFactory().toGeometry(tableEnvelope);
         }
+
+        @Override
+        public int getPrecision(int[] precisions, long[] longs) throws SQLException {
+            return Integer.MAX_VALUE;
+        }
     }
 
     private void testTableViewSpatialPredicate() throws SQLException {

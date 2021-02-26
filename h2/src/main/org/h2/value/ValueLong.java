@@ -136,10 +136,16 @@ public class ValueLong extends Value {
     }
 
     @Override
-    public Value divide(Value v) {
+    public Value divide(Value v, boolean noninteger, boolean allowZeroDivide) {
         ValueLong other = (ValueLong) v;
+        if (noninteger) {
+            return ValueDouble.get(value / (double) other.value);
+        }
         if (other.value == 0) {
-            throw DbException.get(ErrorCode.DIVISION_BY_ZERO_1, getSQL());
+            if (allowZeroDivide)
+                return ValueNull.INSTANCE;
+            else
+                throw DbException.get(ErrorCode.DIVISION_BY_ZERO_1, getSQL());
         }
         return ValueLong.get(value / other.value);
     }

@@ -86,7 +86,7 @@ public class TestValueHashMap extends TestBase implements DataHandler {
                 assertTrue(v1 == null ? v2 == null : v1.equals(v2));
                 break;
             case 3: {
-                ArrayList<Value> a1 = map.keys();
+                ArrayList<Value> a1 = new ArrayList<>(map.keys());
                 ArrayList<Value> a2 = New.arrayList(hash.keySet());
                 assertEquals(a1.size(), a2.size());
                 Collections.sort(a1, vc);
@@ -97,7 +97,7 @@ public class TestValueHashMap extends TestBase implements DataHandler {
                 break;
             }
             case 4:
-                ArrayList<Value> a1 = map.values();
+                ArrayList<Value> a1 = new ArrayList<>(map.values());
                 ArrayList<Value> a2 = New.arrayList(hash.values());
                 assertEquals(a1.size(), a2.size());
                 Collections.sort(a1, vc);

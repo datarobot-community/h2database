@@ -1,0 +1,3 @@
+syntax   - tests not related to Carolina specific functionality, bugs and misc issues with H2
+table    - tests for using binary files as H2 tables
+features - other test for Carolina specific features defined as additional SysProperties and/or Parser extension

@@ -1,22 +1,21 @@
-# Welcome to H2, the Java SQL database. [![Build Status](https://travis-ci.org/h2database/h2database.svg?branch=master)](https://travis-ci.org/h2database/h2database)
+# A fork of [H2](http://www.h2database.com/) database with custom features implementation
 
-## The main features of H2 are:
+## The custom features are:
 
-1. Very fast, open source, JDBC API
-2. Embedded and server modes; in-memory databases
-3. Browser based Console application
-4. Small footprint: around 1.5 MB jar file size
-
-More information: http://h2database.com
-
-## Features
-
-| | [H2](http://www.h2database.com/) | [Derby](http://db.apache.org/derby) | [HSQLDB](http://hsqldb.org) | [MySQL](http://mysql.com) | [PostgreSQL](http://www.postgresql.org) |
-|---------------------------|-------|-------|-------|-------|-------|
-| Pure Java                 | Yes   | Yes   | Yes   | No    | No    |
-| Memory Mode               | Yes   | Yes   | Yes   | No    | No    |
-| Encrypted Database        | Yes   | Yes   | Yes   | No    | No    |
-| ODBC Driver               | Yes   | No    | No    | Yes   | Yes   |
-| Fulltext Search           | Yes   | No    | No    | Yes   | Yes   |
-| Multi Version Concurrency | Yes   | No    | Yes   | Yes   | Yes   |
-| Footprint (jar/dll size)  | ~1 MB | ~2 MB | ~1 MB | ~4 MB | ~6 MB |
+* User-defined tables and schemas
+* Double.NaN and NULL are used interchangeably
+* Date arithmetics (date + 1, timestamp + 1)
+* Infinite.NaN in aggregate functions is the same as NaN
+* Character single space is the same as NULL
+* UPDATE statement returns the number of changed rows (non ANSI SQL compliant)
+* Integer division is done as floats.
+* 0/0 is NULL
+* User-defined functions can specify the precision of the result
+* Disable three-way logic (non ANSI SQL compliant)
+* Linked views in addition to linked tables
+* User-defined context for database connection
+* User-defined automatic type conversion
+* Calculated aliases
+* User-defined listeners for linked queries execution
+* User-defined collaterals
+* User-defined mapping between database types and H2 types for linked tables

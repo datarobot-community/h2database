@@ -4940,32 +4940,9 @@ public class Parser {
             read("FOR");
             command.setJavaClassMethod(readUniqueIdentifier());
         }
-        if (readIf("PRECISION")) {
-            read("(");
-
-            int method ;
-            long precision = 0;
-            if (readIf("ARG")) {
-                method = FunctionInfo.ARG;
-                if (readIf(",")) {
-                    // default value 1 stands for the first argument
-                    precision = readLong()-1;
-                }
-            } else if (readIf("FIXED")) {
-                method = FunctionInfo.FIXED;
-                if (readIf(",")) {
-                    precision = readLong();
-                }
-            } else if (readIf("SUM")) {
-                method = FunctionInfo.SUM;
-            }
-            else {
-                //TODO, throw the correct exception here
-                throw new IllegalArgumentException();
-            }
-
-            read(")");
-            command.setPrecision(method,precision);
+        if (readIf("WITH")) {
+            read("PRECISION");
+            command.setPrecisionJavaClassMethod(readUniqueIdentifier());
         }
         return command;
     }

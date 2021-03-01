@@ -4,22 +4,24 @@ package com.dullesopen.h2test.features;
 import com.dullesopen.h2test.Utils;
 import org.h2.api.ErrorCode;
 import org.h2.engine.SysProperties;
+import org.h2.expression.Expression;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 
+import java.lang.reflect.Method;
 import java.sql.*;
 import java.text.MessageFormat;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
-public class AliasTest {
+public class UserDefinedFunctionTest {
 // ------------------------------ FIELDS ------------------------------
 
-    private static final String FS = "fs";
-    private static String CLASS = AliasTest.class.getName();
+    private static final String CLASS = UserDefinedFunctionTest.class.getName();
     private Connection h2;
 
 // -------------------------- TEST METHODS --------------------------
@@ -42,33 +44,32 @@ public class AliasTest {
 
 // -------------------------- STATIC METHODS --------------------------
 
+    @SuppressWarnings("unused")
     public static double foo(String s, int i) {
         return i;
     }
 
+    @SuppressWarnings("unused")
     public static double foo(String s, int i, double d1, double d2) {
         return i + d1 + d2;
     }
 
-    @SuppressWarnings("UnusedDeclaration")
-    public static String fs(String s) {
-        return s;
-    }
-
+    @SuppressWarnings("unused")
     public static double my(double x) {
         return 10 * x;
     }
 
+    @SuppressWarnings("unused")
     public static double my(double x, int y) {
         return 100 * x + 10 * y;
     }
 
-    @SuppressWarnings("UnusedDeclaration")
+    @SuppressWarnings("unused")
     public static double nan(double x) {
         return Double.NaN;
     }
 
-    @SuppressWarnings("UnusedDeclaration")
+    @SuppressWarnings("unused")
     public static double mean(double... values) {
         double sum = 0;
         for (double x : values) {
@@ -77,7 +78,7 @@ public class AliasTest {
         return sum / values.length;
     }
 
-    @SuppressWarnings("UnusedDeclaration")
+    @SuppressWarnings("unused")
     public static String print(String prefix, double... values) {
         double sum = 0;
         for (double x : values) {
@@ -101,7 +102,7 @@ public class AliasTest {
     }
 
     @Test
-    public void elipses() throws Exception {
+    public void ellipses() throws Exception {
         Statement statement = h2.createStatement();
         {
             statement.execute(MessageFormat.format("CREATE ALIAS mean FOR \"{0}.mean\"", CLASS));
@@ -135,7 +136,7 @@ public class AliasTest {
             String sql = "select isnan(NULL) ";
             ResultSet rs = statement.executeQuery(sql);
             rs.next();
-            assertEquals(rs.getBoolean(1), true);
+            assertTrue(rs.getBoolean(1));
             statement.close();
         }
         {
@@ -146,7 +147,7 @@ public class AliasTest {
             String sql = "select nan(10) is null";
             ResultSet rs = statement.executeQuery(sql);
             rs.next();
-            assertEquals(rs.getBoolean(1), true);
+            assertTrue(rs.getBoolean(1));
             statement.close();
         }
     }
@@ -164,14 +165,13 @@ public class AliasTest {
         rs2.next();
         assertEquals(rs2.getDouble(1), 9.0);
 
-        ResultSet rs;
         try {
             sa.executeQuery("SELECT foo()");
             Assert.fail();
         } catch (SQLException e) {
             Assert.assertEquals(e.getErrorCode(), ErrorCode.METHOD_NOT_FOUND_1);
             Assert.assertEquals(Utils.truncate(e),
-                    "Method \"FOO (com.dullesopen.h2test.features.AliasTest, parameter count: 0)\" not found");
+                    "Method \"FOO (org.h2.enhancements.AliasTest, parameter count: 0)\" not found");
         }
 
         try {
@@ -180,7 +180,7 @@ public class AliasTest {
         } catch (SQLException e) {
             Assert.assertEquals(e.getErrorCode(), ErrorCode.METHOD_NOT_FOUND_1);
             Assert.assertEquals(Utils.truncate(e),
-                    "Method \"FOO (com.dullesopen.h2test.features.AliasTest, parameter count: 1)\" not found");
+                    "Method \"FOO (org.h2.enhancements.AliasTest, parameter count: 1)\" not found");
         }
 
         try {
@@ -198,7 +198,7 @@ public class AliasTest {
         } catch (SQLException e) {
             Assert.assertEquals(e.getErrorCode(), ErrorCode.METHOD_NOT_FOUND_1);
             Assert.assertEquals(Utils.truncate(e),
-                    "Method \"FOO (com.dullesopen.h2test.features.AliasTest, parameter count: 3)\" not found");
+                    "Method \"FOO (org.h2.enhancements.AliasTest, parameter count: 3)\" not found");
         }
 
         try {
@@ -207,7 +207,7 @@ public class AliasTest {
         } catch (SQLException e) {
             Assert.assertEquals(e.getErrorCode(), ErrorCode.METHOD_NOT_FOUND_1);
             Assert.assertEquals(Utils.truncate(e),
-                    "Method \"FOO (com.dullesopen.h2test.features.AliasTest, parameter count: 5)\" not found");
+                    "Method \"FOO (org.h2.enhancements.AliasTest, parameter count: 5)\" not found");
         }
     }
 
@@ -228,19 +228,4 @@ public class AliasTest {
         statement.close();
     }
 
-    @Test
-    public void precision() throws Exception {
-        Statement statement = h2.createStatement();
-        statement.execute("CREATE TABLE foo(a CHAR(6))");
-        statement.execute("INSERT INTO foo values('abcdef')");
-
-        statement.execute(MessageFormat.format("CREATE ALIAS my FOR \"{0}.{1}\" PRECISION(ARG,1)", CLASS, FS));
-        statement.execute("CREATE TABLE bar as select my(a) from foo"); // throws exception here
-
-        String sql = "select * from bar";
-        ResultSet rs = statement.executeQuery(sql);
-
-        assertEquals(rs.getMetaData().getPrecision(1), 6);
-        statement.close();
-    }
 }

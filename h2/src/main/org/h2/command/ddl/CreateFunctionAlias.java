@@ -27,8 +27,7 @@ public class CreateFunctionAlias extends SchemaCommand {
     private boolean force;
     private String source;
     private boolean bufferResultSetToLocalTemp = true;
-    private int method;
-    private long precision;
+    private String precisionJavaClassMethod;
 
     public CreateFunctionAlias(Session session, Schema schema) {
         super(session, schema);
@@ -50,7 +49,7 @@ public class CreateFunctionAlias extends SchemaCommand {
             if (javaClassMethod != null) {
                 functionAlias = FunctionAlias.newInstance(getSchema(), id,
                         aliasName, javaClassMethod, force,
-                        bufferResultSetToLocalTemp, method, precision);
+                        bufferResultSetToLocalTemp, precisionJavaClassMethod);
             } else {
                 functionAlias = FunctionAlias.newInstanceFromSource(
                         getSchema(), id, aliasName, source, force,
@@ -100,14 +99,11 @@ public class CreateFunctionAlias extends SchemaCommand {
         this.source = source;
     }
 	
-    public void setPrecision(int method, long precision) {
-        this.method = method;
-        this.precision = precision;
-    }
-
     @Override
     public int getType() {
         return CommandInterface.CREATE_ALIAS;
     }
 
+    public void setPrecisionJavaClassMethod(String precisionJavaClassMethod) {
+        this.precisionJavaClassMethod = StringUtils.replaceAll(precisionJavaClassMethod, " ", "");    }
 }

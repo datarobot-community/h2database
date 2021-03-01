@@ -46,9 +46,10 @@ public class FunctionAlias extends SchemaObjectBase {
     private boolean deterministic;
     private boolean bufferResultSetToLocalTemp = true;
 
-    private int method;
-    private long precision;
     private final Mode mode;
+    private String precisionClassName;
+    private String precisionMethodName;
+    private Method precision;
 
     private FunctionAlias(Schema schema, int id, String name) {
         initSchemaObjectBase(schema, id, name, Trace.FUNCTION);
@@ -69,7 +70,7 @@ public class FunctionAlias extends SchemaObjectBase {
      */
     public static FunctionAlias newInstance(
             Schema schema, int id, String name, String javaClassMethod,
-            boolean force, boolean bufferResultSetToLocalTemp, int method, long precision) {
+            boolean force, boolean bufferResultSetToLocalTemp, String precisionJavaClassMethod) {
         FunctionAlias alias = new FunctionAlias(schema, id, name);
         int paren = javaClassMethod.indexOf('(');
         int lastDot = javaClassMethod.lastIndexOf('.', paren < 0 ?
@@ -80,9 +81,11 @@ public class FunctionAlias extends SchemaObjectBase {
         alias.className = javaClassMethod.substring(0, lastDot);
         alias.methodName = javaClassMethod.substring(lastDot + 1);
         alias.bufferResultSetToLocalTemp = bufferResultSetToLocalTemp;
+        if (precisionJavaClassMethod!=null) {
+            alias.precisionClassName = precisionJavaClassMethod.substring(0, lastDot);
+            alias.precisionMethodName = precisionJavaClassMethod.substring(lastDot + 1);
+        }
         alias.init(force);
-        alias.method = method;
-        alias.precision = precision;
         return alias;
     }
 
@@ -183,6 +186,17 @@ public class FunctionAlias extends SchemaObjectBase {
         // with a variable number. The one without parameters needs to be used
         // if no parameters are given.
         Arrays.sort(javaMethods);
+        if (precisionClassName != null) {
+            Class<?> precisionJavaClass = JdbcUtils.loadUserClass(precisionClassName);
+            try {
+                this.precision = precisionJavaClass.getMethod(precisionMethodName, Method.class, Expression[].class);
+            } catch (NoSuchMethodException e) {
+                throw DbException.get(
+                        ErrorCode.PUBLIC_STATIC_JAVA_METHOD_NOT_FOUND_1,
+                        precisionClassName + " (" + precisionMethodName + ")");
+
+            }
+        }
     }
 
     private static String getMethodSignature(Method m) {
@@ -575,13 +589,13 @@ public class FunctionAlias extends SchemaObjectBase {
             return id - m.id;
         }
 
+        public Method getMethod() {
+            return method;
+        }
+
     }
 
-    public int getMethod() {
-        return method;
-    }
-
-    public long getPrecision() {
+    public Method getPrecision() {
         return precision;
     }
 

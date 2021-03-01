@@ -3,7 +3,7 @@
  * and the EPL 1.0 (http://h2database.com/html/license.html).
  * Initial Developer: H2 Group
  */
-package com.dullesopen.h2.external;
+package org.h2.contrib.external.support;
 
 import org.h2.api.ErrorCode;
 import org.h2.engine.Database;
@@ -30,11 +30,13 @@ import org.h2.value.*;
 import java.util.*;
 
 /**
- * A set of indices stored in a separate MVStore and explicitly create by CREATE INDEX statement
+ * AK TODO: write a comment for H2 to indicate the purpose of this class.
+ * Copy of MVSecondaryIndex where some additional work was required to make this class work
+ * in the case where index is saved as the only object in the database file.
  *
  * @author Pavel Ganelin
  */
-public class DiskSecondaryIndex extends BaseIndex implements MVIndex {
+public class ExternalSecondaryIndex extends BaseIndex implements MVIndex {
 
     /**
      * The multi-value table.
@@ -48,8 +50,8 @@ public class DiskSecondaryIndex extends BaseIndex implements MVIndex {
      */
     private MVMap<Value, Value> dataMap;
 
-    public DiskSecondaryIndex(Database db, TableBase table, int id, String indexName, String prefixedIndexName,
-                              IndexColumn[] columns, IndexType indexType, MVStore store) {
+    public ExternalSecondaryIndex(Database db, TableBase table, int id, String indexName, String prefixedIndexName,
+                                  IndexColumn[] columns, IndexType indexType, MVStore store) {
         this.mvTable = table;
         initBaseIndex(table, id, prefixedIndexName, columns, indexType);
         if (!database.isStarting()) {

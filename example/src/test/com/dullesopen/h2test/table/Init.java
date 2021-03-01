@@ -1,7 +1,7 @@
 package com.dullesopen.h2test.table;
 
-import com.dullesopen.h2.external.DiskSchemaFactory;
-import com.dullesopen.h2.external.MemorySchemaFactory;
+import org.h2.ri.external.disk.DiskSchemaFactory;
+import org.h2.ri.external.memory.MemorySchemaFactory;
 
 import java.text.MessageFormat;
 

@@ -7,9 +7,11 @@
  * based on MVPrimaryIndex; instead of referencing to MVTable refers to ExternalTable
  *
  */
-package com.dullesopen.h2.external;
+package org.h2.ri.external.disk;
 
 import org.h2.api.ErrorCode;
+import org.h2.contrib.external.ExternalIndex;
+import org.h2.contrib.external.Info;
 import org.h2.engine.Constants;
 import org.h2.engine.Database;
 import org.h2.engine.Session;

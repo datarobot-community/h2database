@@ -1,4 +1,4 @@
-package com.dullesopen.h2.external;
+package org.h2.contrib.external;
 
 import org.h2.mvstore.MVStore;
 

@@ -20,8 +20,8 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import com.dullesopen.h2.external.ExternalIndexResolver;
-import com.dullesopen.h2.external.ExternalQueryExecutionReporter;
+import org.h2.contrib.external.ExternalIndexResolver;
+import org.h2.contrib.external.ExternalQueryExecutionReporter;
 import org.h2.api.DatabaseEventListener;
 import org.h2.api.ErrorCode;
 import org.h2.api.JavaObjectSerializer;

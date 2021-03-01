@@ -1,4 +1,4 @@
-package com.dullesopen.h2.external;
+package org.h2.ri.external.memory;
 
 import org.h2.command.ddl.CreateTableData;
 import org.h2.engine.Database;

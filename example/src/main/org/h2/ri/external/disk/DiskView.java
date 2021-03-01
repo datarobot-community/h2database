@@ -1,4 +1,4 @@
-package com.dullesopen.h2.external;
+package org.h2.ri.external.disk;
 
 import org.h2.api.ErrorCode;
 import org.h2.engine.Session;

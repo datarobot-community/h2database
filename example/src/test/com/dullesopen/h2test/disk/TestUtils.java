@@ -1,6 +1,6 @@
 package com.dullesopen.h2test.disk;
 
-import com.dullesopen.h2.external.DiskSchemaFactory;
+import org.h2.ri.external.disk.DiskSchemaFactory;
 import org.h2.store.fs.FileUtils;
 import org.testng.Assert;
 

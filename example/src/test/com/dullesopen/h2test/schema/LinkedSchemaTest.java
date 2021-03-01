@@ -1,6 +1,6 @@
 package com.dullesopen.h2test.schema;
 
-import com.dullesopen.h2.external.ExternalQueryExecutionReporter;
+import org.h2.contrib.external.ExternalQueryExecutionReporter;
 import org.h2.jdbc.JdbcConnection;
 import org.testng.Assert;
 import org.testng.annotations.Test;

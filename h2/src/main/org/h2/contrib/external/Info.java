@@ -1,4 +1,4 @@
-package com.dullesopen.h2.external;
+package org.h2.contrib.external;
 
 import org.h2.command.ddl.CreateTableData;
 import org.h2.index.IndexType;
@@ -19,16 +19,16 @@ public class Info {
     /**
      * Key to look up table info
      */
-    static final String TABLE = "#self#";
+    public static final String TABLE = "#self#";
 
     /**
      * name of the map with table meta information
      */
-    static final String TABLES = "tables";
+    public static final String TABLES = "tables";
     /**
      * name of the map with primary index
      */
-    static final String PRIMARY = "primary";
+    public static final String PRIMARY = "primary";
     /**
      * name of the map with meta information about secondary indices
      */
@@ -40,7 +40,7 @@ public class Info {
 
 // -------------------------- INNER CLASSES --------------------------
 
-    static class Table implements Serializable {
+    public static class Table implements Serializable {
         final java.util.List<ColumnData> columns;
 
         public Table(CreateTableData data) {
@@ -50,7 +50,7 @@ public class Info {
             }
         }
 
-        CreateTableData export() {
+        public CreateTableData export() {
             CreateTableData result = new CreateTableData();
             result.columns = new ArrayList<Column>();
             for (ColumnData column : columns) {

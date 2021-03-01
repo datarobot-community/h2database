@@ -10,8 +10,8 @@ import java.sql.Connection;
 import java.sql.SQLWarning;
 import java.util.ArrayList;
 
-import com.dullesopen.h2.external.ExternalIndexResolver;
-import com.dullesopen.h2.external.ExternalQueryExecutionReporter;
+import org.h2.contrib.external.ExternalIndexResolver;
+import org.h2.contrib.external.ExternalQueryExecutionReporter;
 import org.h2.command.CommandInterface;
 import org.h2.message.Trace;
 import org.h2.store.DataHandler;

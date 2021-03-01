@@ -1,4 +1,4 @@
-package com.dullesopen.h2.external;
+package org.h2.contrib.external;
 
 import org.h2.api.DatabaseEventListener;
 import org.h2.api.ErrorCode;
@@ -6,6 +6,7 @@ import org.h2.command.ddl.Analyze;
 import org.h2.command.ddl.CreateTableData;
 import org.h2.constraint.Constraint;
 import org.h2.constraint.ConstraintReferential;
+import org.h2.contrib.external.support.ExternalSecondaryIndex;
 import org.h2.engine.DbObject;
 import org.h2.engine.Session;
 import org.h2.engine.SysProperties;
@@ -163,7 +164,7 @@ public abstract class ExternalTable extends TableBase {
             primaryIndex.setMainIndexColumn(mainIndexColumn);
             index = primaryIndex;
         } else {
-            DiskSecondaryIndex i = new DiskSecondaryIndex(session.getDatabase(),
+            ExternalSecondaryIndex i = new ExternalSecondaryIndex(session.getDatabase(),
                     this, indexId,
                     indexName,
                     prefixedIndexName, cols, indexType, indexStore);
@@ -521,7 +522,7 @@ public abstract class ExternalTable extends TableBase {
             int indexId = database.allocateObjectId();
             IndexColumn[] columns = value.export();
             IndexColumn.mapColumns(columns, this);
-            DiskSecondaryIndex index = new DiskSecondaryIndex(database,
+            ExternalSecondaryIndex index = new ExternalSecondaryIndex(database,
                     this, indexId,
                     entry.getKey(),
                     indexName, columns, value.createIndexType(), indexStore);

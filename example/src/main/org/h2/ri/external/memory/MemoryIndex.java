@@ -1,5 +1,6 @@
-package com.dullesopen.h2.external;
+package org.h2.ri.external.memory;
 
+import org.h2.contrib.external.ExternalIndex;
 import org.h2.engine.Constants;
 import org.h2.engine.Session;
 import org.h2.index.Cursor;

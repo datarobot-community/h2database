@@ -20,8 +20,8 @@ import java.util.HashSet;
 import java.util.Arrays;
 import java.util.List;
 
-import com.dullesopen.h2.external.ExternalIndexResolver;
-import com.dullesopen.h2.external.ExternalQueryExecutionReporter;
+import org.h2.contrib.external.ExternalIndexResolver;
+import org.h2.contrib.external.ExternalQueryExecutionReporter;
 import org.h2.api.ErrorCode;
 import org.h2.command.Prepared;
 import org.h2.engine.ColumnExtension;

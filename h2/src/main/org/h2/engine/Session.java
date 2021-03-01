@@ -19,8 +19,8 @@ import java.util.ArrayDeque;
 
 import java.sql.SQLWarning;
 
-import com.dullesopen.h2.external.ExternalIndexResolver;
-import com.dullesopen.h2.external.ExternalQueryExecutionReporter;
+import org.h2.contrib.external.ExternalIndexResolver;
+import org.h2.contrib.external.ExternalQueryExecutionReporter;
 import org.h2.api.ErrorCode;
 import org.h2.command.Command;
 import org.h2.command.CommandInterface;

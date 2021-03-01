@@ -1,4 +1,4 @@
-package com.dullesopen.h2.external;
+package org.h2.ri.external.disk;
 
 /**
  * @author Pavel Ganelin
@@ -15,6 +15,9 @@ package com.dullesopen.h2.external;
 
 import org.h2.api.ErrorCode;
 import org.h2.command.ddl.CreateTableData;
+import org.h2.contrib.external.ExternalSchema;
+import org.h2.contrib.external.Info;
+import org.h2.contrib.external.StoreCache;
 import org.h2.engine.Database;
 import org.h2.engine.DbObject;
 import org.h2.engine.Session;

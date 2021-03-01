@@ -34,8 +34,8 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 
-import com.dullesopen.h2.external.ExternalIndexResolver;
-import com.dullesopen.h2.external.ExternalQueryExecutionReporter;
+import org.h2.contrib.external.ExternalIndexResolver;
+import org.h2.contrib.external.ExternalQueryExecutionReporter;
 import org.h2.api.ErrorCode;
 import org.h2.command.CommandInterface;
 import org.h2.engine.ConnectionInfo;

@@ -1,6 +1,7 @@
-package com.dullesopen.h2.external;
+package org.h2.ri.external.memory;
 
 import org.h2.command.ddl.CreateTableData;
+import org.h2.contrib.external.ExternalTable;
 import org.h2.index.IndexType;
 import org.h2.result.Row;
 import org.h2.result.RowImpl;

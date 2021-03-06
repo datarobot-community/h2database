@@ -1,4 +1,4 @@
-package com.dullesopen.h2test.disk;
+package org.h2.contrib.external;
 
 
 import org.h2.api.ErrorCode;

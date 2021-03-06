@@ -1,4 +1,4 @@
-package com.dullesopen.h2test.table;
+package org.h2.contrib.external;
 
 import org.h2.store.fs.FileUtils;
 import org.testng.Assert;

@@ -4,24 +4,22 @@ package com.dullesopen.h2test.features;
 import com.dullesopen.h2test.Utils;
 import org.h2.api.ErrorCode;
 import org.h2.engine.SysProperties;
-import org.h2.expression.Expression;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 
-import java.lang.reflect.Method;
 import java.sql.*;
 import java.text.MessageFormat;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
-public class UserDefinedFunctionTest {
+public class AliasTest {
 // ------------------------------ FIELDS ------------------------------
 
-    private static final String CLASS = UserDefinedFunctionTest.class.getName();
+    private static final String CLASS = AliasTest.class.getName();
     private Connection h2;
 
 // -------------------------- TEST METHODS --------------------------
@@ -171,7 +169,7 @@ public class UserDefinedFunctionTest {
         } catch (SQLException e) {
             Assert.assertEquals(e.getErrorCode(), ErrorCode.METHOD_NOT_FOUND_1);
             Assert.assertEquals(Utils.truncate(e),
-                    "Method \"FOO (org.h2.enhancements.AliasTest, parameter count: 0)\" not found");
+                    "Method \"FOO (com.dullesopen.h2test.features.AliasTest, parameter count: 0)\" not found");
         }
 
         try {
@@ -180,7 +178,7 @@ public class UserDefinedFunctionTest {
         } catch (SQLException e) {
             Assert.assertEquals(e.getErrorCode(), ErrorCode.METHOD_NOT_FOUND_1);
             Assert.assertEquals(Utils.truncate(e),
-                    "Method \"FOO (org.h2.enhancements.AliasTest, parameter count: 1)\" not found");
+                    "Method \"FOO (com.dullesopen.h2test.features.AliasTest, parameter count: 1)\" not found");
         }
 
         try {
@@ -198,7 +196,7 @@ public class UserDefinedFunctionTest {
         } catch (SQLException e) {
             Assert.assertEquals(e.getErrorCode(), ErrorCode.METHOD_NOT_FOUND_1);
             Assert.assertEquals(Utils.truncate(e),
-                    "Method \"FOO (org.h2.enhancements.AliasTest, parameter count: 3)\" not found");
+                    "Method \"FOO (com.dullesopen.h2test.features.AliasTest, parameter count: 3)\" not found");
         }
 
         try {
@@ -207,7 +205,7 @@ public class UserDefinedFunctionTest {
         } catch (SQLException e) {
             Assert.assertEquals(e.getErrorCode(), ErrorCode.METHOD_NOT_FOUND_1);
             Assert.assertEquals(Utils.truncate(e),
-                    "Method \"FOO (org.h2.enhancements.AliasTest, parameter count: 5)\" not found");
+                    "Method \"FOO (com.dullesopen.h2test.features.AliasTest, parameter count: 5)\" not found");
         }
     }
 

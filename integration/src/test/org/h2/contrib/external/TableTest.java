@@ -1,8 +1,8 @@
-package com.dullesopen.h2test.disk;
+package org.h2.contrib.external;
 
 
-import com.dullesopen.h2test.Utils;
 import org.h2.api.ErrorCode;
+import org.h2.contrib.test.Utils;
 import org.h2.store.fs.FileUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;

@@ -1,4 +1,4 @@
-package com.dullesopen.h2test.schema;
+package org.h2.contrib.external;
 
 import org.h2.engine.Database;
 import org.h2.engine.User;
@@ -15,6 +15,6 @@ public class DemoSchemaFactory implements SchemaFactory {
 // --------------------- Interface SchemaFactory ---------------------
 
     public Schema create(Database database, int id, String schemaName, User owner, String parameters) {
-        return new com.dullesopen.h2test.schema.DemoSchema(database, id, schemaName, owner);
+        return new DemoSchema(database, id, schemaName, owner);
     }
 }

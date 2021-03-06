@@ -1,11 +1,9 @@
-package com.dullesopen.h2test.features;
+package org.h2.contrib.conversion;
 
-import com.dullesopen.h2test.Utils;
 import org.h2.api.ErrorCode;
-import org.h2.value.Value;
-import org.h2.value.ValueInt;
-import org.h2.value.ValueNull;
-import org.h2.value.ValueString;
+import org.h2.contrib.test.Utils;
+import org.h2.value.*;
+import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeSuite;
@@ -47,38 +45,45 @@ public class ConversionTest {
 
     @Test
     public void conversion() throws Exception {
-        Statement sa = h2.createStatement();
-        sa.execute("CREATE TABLE A (A INT);");
-        try {
+        try (Statement sa = h2.createStatement()) {
+            sa.execute("CREATE TABLE A (A INT);");
+            try {
+                sa.execute("INSERT INTO A VALUES ('10K');");
+                fail();
+            } catch (SQLException e) {
+                assertEquals(e.getErrorCode(), ErrorCode.DATA_CONVERSION_ERROR_1);
+                Assert.assertEquals(Utils.truncate(e), "Data conversion error converting \"'10K' (A: A INT)\"");
+            }
+            // customize database
+            String sql = MessageFormat.format(
+                    "CREATE CONVERSION CHARACTER VARYING, INT,  ''{0}$My'';",
+                    CLASS);
+            sa.execute(sql);
+            // now it runs ok
             sa.execute("INSERT INTO A VALUES ('10K');");
-            fail();
-        } catch (SQLException e) {
-            assertEquals(e.getErrorCode(), ErrorCode.DATA_CONVERSION_ERROR_1);
-            assertEquals(Utils.truncate(e), "Data conversion error converting \"'10K' (A: A INT)\"");
+            try (ResultSet rs = sa.executeQuery("SELECT * FROM A")) {
+                rs.next();
+                assertEquals(rs.getInt(1), 10000);
+            }
         }
-        // customize database
-        sa.execute("CREATE CONVERSION CHARACTER VARYING, INT,  'com.dullesopen.h2test.features.ConversionTest$My';");
-        // now it runs ok
-        sa.execute("INSERT INTO A VALUES ('10K');");
-        ResultSet a = sa.executeQuery("SELECT * FROM A");
-        a.next();
-        assertEquals(a.getInt(1), 10000);
     }
 
     @Test
     public void doubleNanToString() throws Exception {
-        Statement sa = h2.createStatement();
-        sa.execute("CREATE TABLE tab (abc DOUBLE);");
-        sa.execute("INSERT INTO tab VALUES (NULL);");
-        sa.execute("INSERT INTO tab VALUES (123.456);");
-        // customize database
-        sa.execute("CREATE CONVERSION DOUBLE , CHARACTER VARYING,  'com.dullesopen.h2test.features.ConversionTest$DoubleToDot';");
-        sa.execute(MessageFormat.format("CREATE ALIAS cats FOR \"{0}.cats\"", CLASS));
-        ResultSet a = sa.executeQuery("SELECT cats('klm',abc,'xyz') from tab");
-        a.next();
-        assertEquals(a.getString(1), "klm.xyz");
-        a.next();
-        assertEquals(a.getString(1), "klm123.456xyz");
+        try (Statement sa = h2.createStatement()) {
+            sa.execute("CREATE TABLE tab (abc DOUBLE);");
+            sa.execute("INSERT INTO tab VALUES (NULL);");
+            sa.execute("INSERT INTO tab VALUES (123.456);");
+            String conversion = MessageFormat.format("CREATE CONVERSION DOUBLE , CHARACTER VARYING,  ''{0}$DoubleToDot'';", CLASS);
+            sa.execute(conversion);
+            String alias = MessageFormat.format("CREATE ALIAS cats FOR \"{0}.cats\"", CLASS);
+            sa.execute(alias);
+            ResultSet a = sa.executeQuery("SELECT cats('klm',abc,'xyz') from tab");
+            a.next();
+            assertEquals(a.getString(1), "klm.xyz");
+            a.next();
+            assertEquals(a.getString(1), "klm123.456xyz");
+        }
     }
 
 
@@ -99,6 +104,7 @@ public class ConversionTest {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class DoubleToDot implements Value.Convert {
         public Value convertTo(Value from, int to) {
             if (to != Value.STRING) {

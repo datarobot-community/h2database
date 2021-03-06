@@ -1,8 +1,7 @@
 
-package com.dullesopen.h2test.table;
+package org.h2.contrib.external;
 
-import com.dullesopen.h2test.TestConfig;
-import com.dullesopen.h2test.Utils;
+import org.h2.contrib.test.Utils;
 import org.h2.jdbc.JdbcConnection;
 import org.h2.store.fs.FileUtils;
 import org.testng.Assert;

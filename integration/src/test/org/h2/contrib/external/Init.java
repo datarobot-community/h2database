@@ -1,8 +1,10 @@
-package com.dullesopen.h2test.table;
+package org.h2.contrib.external;
 
 import org.h2.ri.external.disk.DiskSchemaFactory;
 import org.h2.ri.external.memory.MemorySchemaFactory;
 
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.MessageFormat;
 
 public class Init {

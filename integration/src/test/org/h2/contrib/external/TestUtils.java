@@ -1,4 +1,4 @@
-package com.dullesopen.h2test.disk;
+package org.h2.contrib.external;
 
 import org.h2.ri.external.disk.DiskSchemaFactory;
 import org.h2.store.fs.FileUtils;
@@ -12,10 +12,10 @@ import java.text.MessageFormat;
  * Misc util methods used by test classes
  */
 class TestUtils {
+    public static final String DIR = "target/external";
 // ------------------------------ FIELDS ------------------------------
 
     static final String URL = "jdbc:h2:mem:";
-    static final String DIR = "target/external";
 
 // -------------------------- STATIC METHODS --------------------------
 
@@ -82,7 +82,7 @@ class TestUtils {
         statement.close();
     }
 
-    static void schemas(Statement statement, boolean append) throws SQLException {
+    public static void schemas(Statement statement, boolean append) throws SQLException {
         String schema = MessageFormat.format("CREATE SCHEMA MYLIB EXTERNAL (''{0}'',''dir={1};append={2}'')",
                 DiskSchemaFactory.class.getName(), DIR, append);
         statement.execute(schema);

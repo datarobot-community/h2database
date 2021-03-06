@@ -1,4 +1,4 @@
-package com.dullesopen.h2test.disk;
+package org.h2.contrib.external;
 
 
 import org.h2.store.fs.FileUtils;
@@ -11,7 +11,7 @@ import java.io.File;
 import java.sql.*;
 
 
-public class IndexTest {
+public class Index2Test {
 
     @BeforeMethod
     public void setUpConnection() throws Exception {

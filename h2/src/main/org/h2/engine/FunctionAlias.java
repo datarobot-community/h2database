@@ -5,13 +5,6 @@
  */
 package org.h2.engine;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Arrays;
 import org.h2.Driver;
 import org.h2.api.ErrorCode;
 import org.h2.command.Parser;
@@ -21,15 +14,19 @@ import org.h2.message.Trace;
 import org.h2.schema.Schema;
 import org.h2.schema.SchemaObjectBase;
 import org.h2.table.Table;
-import org.h2.util.JdbcUtils;
-import org.h2.util.New;
-import org.h2.util.SourceCompiler;
-import org.h2.util.StatementBuilder;
-import org.h2.util.StringUtils;
+import org.h2.util.*;
 import org.h2.value.DataType;
 import org.h2.value.Value;
 import org.h2.value.ValueArray;
 import org.h2.value.ValueNull;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Represents a user-defined function, or alias.
@@ -82,8 +79,13 @@ public class FunctionAlias extends SchemaObjectBase {
         alias.methodName = javaClassMethod.substring(lastDot + 1);
         alias.bufferResultSetToLocalTemp = bufferResultSetToLocalTemp;
         if (precisionJavaClassMethod!=null) {
-            alias.precisionClassName = precisionJavaClassMethod.substring(0, lastDot);
-            alias.precisionMethodName = precisionJavaClassMethod.substring(lastDot + 1);
+            int ld = precisionJavaClassMethod.lastIndexOf('.', paren < 0 ?
+                    precisionJavaClassMethod.length() : paren);
+            if (ld < 0) {
+                throw DbException.get(ErrorCode.SYNTAX_ERROR_1, precisionJavaClassMethod);
+            }
+            alias.precisionClassName = precisionJavaClassMethod.substring(0, ld);
+            alias.precisionMethodName = precisionJavaClassMethod.substring(ld + 1);
         }
         alias.init(force);
         return alias;
@@ -140,8 +142,8 @@ public class FunctionAlias extends SchemaObjectBase {
             compiler.setSource(fullClassName, source);
             try {
                 Method m = compiler.getMethod(fullClassName);
-                JavaMethod method = new JavaMethod(m, 0, mode);
-                javaMethods = new JavaMethod[] {
+                JavaMethod method = new JavaMethod(m, 0, database);
+                javaMethods = new JavaMethod[]{
                         method
                 };
             } catch (DbException e) {
@@ -163,7 +165,7 @@ public class FunctionAlias extends SchemaObjectBase {
             }
             if (m.getName().equals(methodName) ||
                     getMethodSignature(m).equals(methodName)) {
-                JavaMethod javaMethod = new JavaMethod(m, i, mode);
+                JavaMethod javaMethod = new JavaMethod(m, i, database);
                 for (JavaMethod old : list) {
                     if (old.getParameterCount() == javaMethod.getParameterCount()) {
                         throw DbException.get(ErrorCode.
@@ -369,12 +371,12 @@ public class FunctionAlias extends SchemaObjectBase {
         private boolean varArgs;
         private Class<?> varArgClass;
         private int paramCount;
-        private final Mode mode;
+        private final Database database;
 
-        JavaMethod(Method method, int id, Mode mode) {
+        JavaMethod(Method method, int id, Database database) {
             this.method = method;
             this.id = id;
-            this.mode = mode;
+            this.database = database;
             Class<?>[] paramClasses = method.getParameterTypes();
             paramCount = paramClasses.length;
             if (paramCount > 0) {
@@ -463,7 +465,8 @@ public class FunctionAlias extends SchemaObjectBase {
                     }
                     o = objArray;
                 } else {
-                    v = v.convertTo(type);
+                    Value value = database.convertToUserDefined(v, v.getType(), type);
+                    v = value == null ? v.convertTo(type) : value;
                     o = v.getObject();
                 }
                 if (o == null) {
@@ -487,9 +490,10 @@ public class FunctionAlias extends SchemaObjectBase {
                             }
                         }
                     } else if (SysProperties.DOUBLE_NAN_SAME_AS_NULL && paramClass.equals(String.class)) {
-                        Value.Convert convert = Value.getConvert(args[a].getType(), Value.STRING);
-                        if (convert != null)
-                            o = convert.convertTo(v, Value.STRING).getString();
+                        Value value = database.convertToUserDefined(v, args[a].getType(), Value.STRING);
+                        if (value != null) {
+                            o = value.getString();
+                        }
                     }
                 } else {
                     if (!paramClass.isAssignableFrom(o.getClass()) && !paramClass.isPrimitive()) {
@@ -538,7 +542,7 @@ public class FunctionAlias extends SchemaObjectBase {
                     if (Double.isNaN(d))
                         return ValueNull.INSTANCE;
                 }
-                if (mode.spaceIsNull && returnValue instanceof String) {
+                if (database.getMode().spaceIsNull && returnValue instanceof String) {
                     String s = (String) returnValue;
                     switch (s.length()) {
                         case 0:

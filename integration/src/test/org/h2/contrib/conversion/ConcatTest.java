@@ -1,5 +1,6 @@
 package org.h2.contrib.conversion;
 
+import org.h2.contrib.UserDefinedConversion;
 import org.h2.store.fs.FileUtils;
 import org.h2.value.Value;
 import org.h2.value.ValueNull;
@@ -40,21 +41,24 @@ public class ConcatTest {
 
 // -------------------------- OTHER METHODS --------------------------
 
+    /**
+     * No user defined conversion for concat operation
+     */
     @Test
     public void dot() throws Exception {
         Statement stat = h2.createStatement();
         String sql = MessageFormat.format(
-        "CREATE CONVERSION DOUBLE , CHARACTER VARYING,  ''{0}$Best'';"
-        ,ConcatTest.class.getName());
+                "CREATE CONVERSION DOUBLE , CHARACTER VARYING,  ''{0}$Best'';"
+                , ConcatTest.class.getName());
         stat.execute(sql);
         ResultSet rs = stat.executeQuery("SELECT concat(abc,'/',def) cat FROM one");
         int prec = rs.getMetaData().getPrecision(1);
         rs.next();
-        Assert.assertEquals("10/20", rs.getString("cat"));
-        Assert.assertEquals(200, prec);
+        Assert.assertEquals(rs.getString("cat"), "10/20");
+        Assert.assertEquals(prec, 200);
     }
 
-    public static class Best implements Value.Convert {
+    public static class Best implements UserDefinedConversion {
         public Value convertTo(Value from, int to) {
             if (to != Value.STRING) {
                 throw new IllegalArgumentException("unexpected type");

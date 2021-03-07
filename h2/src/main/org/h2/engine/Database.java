@@ -30,6 +30,7 @@ import org.h2.command.CommandInterface;
 import org.h2.command.ddl.CreateTableData;
 import org.h2.command.dml.SetTypes;
 import org.h2.constraint.Constraint;
+import org.h2.contrib.UserDefinedConversion;
 import org.h2.index.Cursor;
 import org.h2.index.Index;
 import org.h2.index.IndexType;
@@ -215,6 +216,8 @@ public class Database implements DataHandler {
     private Map<String, Connection> externalConnections= new LinkedHashMap<String, Connection>();
 
     private Map<String, ExternalIndexResolver> externalIndexResolvers = new HashMap<String, ExternalIndexResolver>();
+
+    private UserDefinedConversion conversions[][] = new UserDefinedConversion[Value.TYPE_COUNT + 1][Value.TYPE_COUNT + 1];
 
     private ExternalQueryExecutionReporter externalQueryExecutionReporter;
 
@@ -2951,5 +2954,21 @@ public class Database implements DataHandler {
 
     public void setExternalQueryExecutionReporter(ExternalQueryExecutionReporter externalQueryExecutionReporter) {
         this.externalQueryExecutionReporter = externalQueryExecutionReporter;
+    }
+
+    public void addConversion(int fromType, int toType, UserDefinedConversion convert) {
+        conversions[fromType][toType] = convert;
+    }
+
+    public Value convertToUserDefined(Value value, int fromType, int targetType) {
+        UserDefinedConversion conversion =
+                fromType < conversions.length && targetType < conversions.length ?
+                        conversions[fromType][targetType] :
+                        null;
+        if (conversion != null) {
+            return conversion.convertTo(value, targetType);
+        } else {
+            return null;
+        }
     }
 }

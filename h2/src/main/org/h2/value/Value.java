@@ -192,12 +192,6 @@ public abstract class Value {
     private static final BigDecimal MIN_LONG_DECIMAL =
             BigDecimal.valueOf(Long.MIN_VALUE);
 
-    public interface Convert {
-        Value convertTo(Value from, int to);
-    }
-
-    static Convert conversions[][] = new Convert[TYPE_COUNT + 1][TYPE_COUNT + 1];
-
     /**
      * Get the SQL expression for this value.
      *
@@ -560,11 +554,6 @@ public abstract class Value {
         // converting BLOB to CLOB and vice versa is done in ValueLob
         if (getType() == targetType) {
             return this;
-        }
-
-        Convert convert = getConvert(getType(), targetType);
-        if (convert != null) {
-            return convert.convertTo(this, targetType);
         }
 
         try {
@@ -1019,10 +1008,6 @@ public abstract class Value {
         }
     }
 
-    public static Convert getConvert(int sourceType, int targetType) {
-        return sourceType <= TYPE_COUNT && targetType <= TYPE_COUNT ? conversions[sourceType][targetType] : null;
-    }
-
     /**
      * Compare this value against another value given that the values are of the
      * same data type.
@@ -1278,11 +1263,6 @@ public abstract class Value {
      */
     public interface ValueBlob {
         // this is a marker interface
-    }
-
-    public static void addConversion(int fromType, int toType, Convert convert) {
-        /// check for index out of range
-        conversions[fromType][toType] = convert;
     }
 
     public Value aggregate(Value v) {

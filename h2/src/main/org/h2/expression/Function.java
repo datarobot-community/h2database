@@ -746,9 +746,11 @@ public class Function extends Expression implements FunctionCall {
                     continue;
                 }
                 if (result == ValueNull.INSTANCE) {
-                    result = v;
+                    Value str = database.convertToUserDefined(v, v.getType(), Value.STRING);
+                    result = str == null ? v : str;
                 } else {
-                    String tmp = v.getString();
+                    Value str = database.convertToUserDefined(v, v.getType(), Value.STRING);
+                    String tmp = str==null?v.getString():str.getString();
                     if (!StringUtils.isNullOrEmpty(separator)
                             && !StringUtils.isNullOrEmpty(tmp)) {
                         tmp = separator.concat(tmp);

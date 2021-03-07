@@ -19,12 +19,6 @@ public class CarolinaModeTest {
 
 // -------------------------- TEST METHODS --------------------------
 
-    @BeforeSuite
-    protected void beforeSuite() throws Exception {
-        System.setProperty("h2.disableThreeValueLogic", "true");
-    }
-
-
     @BeforeMethod
     protected void setUp() throws Exception {
         Class.forName("org.h2.Driver");

@@ -1,8 +1,12 @@
 package org.h2.contrib.conversion;
 
 import org.h2.api.ErrorCode;
+import org.h2.contrib.UserDefinedConversion;
 import org.h2.contrib.test.Utils;
-import org.h2.value.*;
+import org.h2.value.Value;
+import org.h2.value.ValueInt;
+import org.h2.value.ValueNull;
+import org.h2.value.ValueString;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -12,8 +16,7 @@ import org.testng.annotations.Test;
 import java.sql.*;
 import java.text.MessageFormat;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 
 
 public class ConversionTest {
@@ -43,7 +46,10 @@ public class ConversionTest {
 
 // -------------------------- OTHER METHODS --------------------------
 
-    @Test
+    /**
+     * The conversion is not required here
+     */
+    @Test(enabled = false)
     public void conversion() throws Exception {
         try (Statement sa = h2.createStatement()) {
             sa.execute("CREATE TABLE A (A INT);");
@@ -73,6 +79,7 @@ public class ConversionTest {
         try (Statement sa = h2.createStatement()) {
             sa.execute("CREATE TABLE tab (abc DOUBLE);");
             sa.execute("INSERT INTO tab VALUES (NULL);");
+            sa.execute("INSERT INTO tab VALUES (123.);");
             sa.execute("INSERT INTO tab VALUES (123.456);");
             String conversion = MessageFormat.format("CREATE CONVERSION DOUBLE , CHARACTER VARYING,  ''{0}$DoubleToDot'';", CLASS);
             sa.execute(conversion);
@@ -82,6 +89,33 @@ public class ConversionTest {
             a.next();
             assertEquals(a.getString(1), "klm.xyz");
             a.next();
+            assertEquals(a.getString(1), "klm123xyz");
+            a.next();
+            assertEquals(a.getString(1), "klm123.456xyz");
+        }
+    }
+
+
+    /**
+     * string concatenation is not using User defined conversiona
+     *
+     * @throws Exception
+     */
+    @Test
+    public void concat() throws Exception {
+        try (Statement sa = h2.createStatement()) {
+            sa.execute("CREATE TABLE tab (abc DOUBLE);");
+            sa.execute("INSERT INTO tab VALUES (NULL);");
+            sa.execute("INSERT INTO tab VALUES (123);");
+            sa.execute("INSERT INTO tab VALUES (123.456);");
+            String conversion = MessageFormat.format("CREATE CONVERSION DOUBLE , CHARACTER VARYING,  ''{0}$DoubleToDot'';", CLASS);
+            sa.execute(conversion);
+            ResultSet a = sa.executeQuery("SELECT 'klm' || abc || 'xyz' from tab");
+            a.next();
+            assertNull(a.getString(1));
+            a.next();
+            assertEquals(a.getString(1), "klm123.0xyz");
+            a.next();
             assertEquals(a.getString(1), "klm123.456xyz");
         }
     }
@@ -89,7 +123,7 @@ public class ConversionTest {
 
 // -------------------------- INNER CLASSES --------------------------
 
-    public static class My implements Value.Convert {
+    public static class My implements UserDefinedConversion {
         public Value convertTo(Value from, int to) {
             if (from.getType() != Value.STRING)
                 throw new IllegalArgumentException("unexpected type");
@@ -105,7 +139,7 @@ public class ConversionTest {
     }
 
     @SuppressWarnings("unused")
-    public static class DoubleToDot implements Value.Convert {
+    public static class DoubleToDot implements UserDefinedConversion {
         public Value convertTo(Value from, int to) {
             if (to != Value.STRING) {
                 throw new IllegalArgumentException("unexpected type");
@@ -113,7 +147,8 @@ public class ConversionTest {
                 return ValueString.get(".");
             } else if (from.getType() == Value.DOUBLE) {
                 double d = from.getDouble();
-                return ValueString.get(Double.toString(d));
+                long n = (long) d;
+                return ValueString.get(n == d ? Long.toString(n) : Double.toString(d));
             } else {
                 return ValueString.get(from.getString());
             }

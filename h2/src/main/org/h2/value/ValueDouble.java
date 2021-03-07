@@ -133,10 +133,7 @@ public class ValueDouble extends Value {
 
     @Override
     public String getString() {
-        Value.Convert convert = Value.getConvert(Value.DOUBLE, Value.STRING);
-        return convert == null ?
-                String.valueOf(value) :
-                convert.convertTo(this, Value.STRING).getString();
+        return String.valueOf(value);
     }
 
     @Override

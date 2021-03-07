@@ -38,8 +38,9 @@ public class UdfPrecisionTest {
         statement.execute("CREATE TABLE foo(a CHAR(6))");
         statement.execute("INSERT INTO foo values('abcdef')");
 
-        statement.execute(MessageFormat.format("CREATE ALIAS my FOR \"{0}.{1}\" WITH PRECISION \"{2}.{3}\"",
-                MYFUN, "fs", MYFUN, "myprecision"));
+        String alias = MessageFormat.format("CREATE ALIAS my FOR \"{0}.{1}\" WITH PRECISION \"{2}.{3}\"",
+                MYFUN, "fs", MYFUN, "myprecision");
+        statement.execute(alias);
         statement.execute("CREATE TABLE bar as select my(a) from foo"); // throws exception here
 
         String sql = "select * from bar";

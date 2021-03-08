@@ -43,14 +43,14 @@ public class ConditionIn extends Condition {
     @Override
     public Value getValue(Session session) {
         Value l = left.getValue(session);
-        if (l == ValueNull.INSTANCE && !session.getDatabase().getMode().disableThreeWayLogic) {
+        if (l == ValueNull.INSTANCE && !session.getDatabase().getMode().disableThreeValuedLogic) {
             return l;
         }
         boolean result = false;
         boolean hasNull = false;
         for (Expression e : valueList) {
             Value r = e.getValue(session);
-            if (r == ValueNull.INSTANCE && !session.getDatabase().getMode().disableThreeWayLogic) {
+            if (r == ValueNull.INSTANCE && !session.getDatabase().getMode().disableThreeValuedLogic) {
                 hasNull = true;
             } else {
                 r = r.convertTo(l.getType());
@@ -60,7 +60,7 @@ public class ConditionIn extends Condition {
                 }
             }
         }
-        if (!result && hasNull && !session.getDatabase().getMode().disableThreeWayLogic) {
+        if (!result && hasNull && !session.getDatabase().getMode().disableThreeValuedLogic) {
             return ValueNull.INSTANCE;
         }
         return ValueBoolean.get(result);
@@ -79,7 +79,7 @@ public class ConditionIn extends Condition {
     public Expression optimize(Session session) {
         left = left.optimize(session);
         boolean constant = left.isConstant();
-        if (constant && left == ValueExpression.getNull() && !session.getDatabase().getMode().disableThreeWayLogic) {
+        if (constant && left == ValueExpression.getNull() && !session.getDatabase().getMode().disableThreeValuedLogic) {
             return left;
         }
         boolean allValuesConstant = true;
@@ -106,7 +106,7 @@ public class ConditionIn extends Condition {
         if (size == 1) {
             Expression right = valueList.get(0);
             Expression expr =
-                    session.getDatabase().getMode().disableThreeWayLogic &&
+                    session.getDatabase().getMode().disableThreeValuedLogic &&
                             right.isConstant() && right.getValue(session) == ValueNull.INSTANCE ?
                             new Comparison(session, Comparison.IS_NULL, left, null) :
                             new Comparison(session, Comparison.EQUAL, left, right);

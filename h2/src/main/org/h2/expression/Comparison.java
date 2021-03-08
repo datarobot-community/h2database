@@ -218,7 +218,7 @@ public class Comparison extends Condition {
                 DbException.throwInternalError(left + " " + right);
             }
             if ((left == ValueExpression.getNull() ||
-                    right == ValueExpression.getNull()) && !session.getDatabase().getMode().disableThreeWayLogic) {
+                    right == ValueExpression.getNull()) && !session.getDatabase().getMode().disableThreeValuedLogic) {
                 // TODO NULL handling: maybe issue a warning when comparing with
                 // a NULL constants
                 if ((compareType & NULL_SAFE) == 0) {
@@ -251,7 +251,7 @@ public class Comparison extends Condition {
         }
         Value r = right.getValue(session);
         int dataType = Value.getHigherOrder(left.getType(), right.getType());
-        if (session.getDatabase().getMode().disableThreeWayLogic ) {
+        if (session.getDatabase().getMode().disableThreeValuedLogic) {
             if (l == ValueNull.INSTANCE && r == ValueNull.INSTANCE) {
                 switch (compareType) {
                     case Comparison.SMALLER:

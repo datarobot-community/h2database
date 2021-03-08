@@ -211,7 +211,7 @@ public class Mode {
      * not compatible with ANSI
      */
 
-    public boolean disableThreeWayLogic;
+    public boolean disableThreeValuedLogic;
 
     private final String name;
 
@@ -329,7 +329,7 @@ public class Mode {
         mode.nonIntegerDivision = true;
         mode.allowZeroDivide = true;
         mode.concatReturnSize = 200;
-        mode.disableThreeWayLogic = true;
+        mode.disableThreeValuedLogic = true;
         add(mode);
     }
 

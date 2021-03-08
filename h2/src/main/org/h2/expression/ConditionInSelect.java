@@ -50,7 +50,7 @@ public class ConditionInSelect extends Condition {
         Value l = left.getValue(session);
         if (!rows.hasNext()) {
             return ValueBoolean.get(all);
-        } else if (l == ValueNull.INSTANCE && !session.getDatabase().getMode().disableThreeWayLogic) {
+        } else if (l == ValueNull.INSTANCE && !session.getDatabase().getMode().disableThreeValuedLogic) {
             return l;
         }
         if (!session.getDatabase().getSettings().optimizeInSelect) {
@@ -68,7 +68,7 @@ public class ConditionInSelect extends Condition {
         if (rows.containsDistinct(new Value[] { l })) {
             return ValueBoolean.get(true);
         }
-        if (rows.containsDistinct(new Value[]{ValueNull.INSTANCE}) && !session.getDatabase().getMode().disableThreeWayLogic) {
+        if (rows.containsDistinct(new Value[]{ValueNull.INSTANCE}) && !session.getDatabase().getMode().disableThreeValuedLogic) {
             return ValueNull.INSTANCE;
         }
         return ValueBoolean.get(false);
@@ -83,7 +83,7 @@ public class ConditionInSelect extends Condition {
             boolean value;
             Value r = rows.currentRow()[0];
             if (r == ValueNull.INSTANCE) {
-                if (database.getMode().disableThreeWayLogic) {
+                if (database.getMode().disableThreeValuedLogic) {
                     value = l == ValueNull.INSTANCE;
                 } else {
                     value = false;

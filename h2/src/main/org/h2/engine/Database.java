@@ -209,9 +209,9 @@ public class Database implements DataHandler {
     public ColumnExtensionFactory columnExtensionFactory;
 
     /**
-     * Context to be passed to external schemas if required
+     * client context to be passed to external schemas if required
      */
-    public Object context;
+    public Object clientContext;
 
     private Map<String, Connection> externalConnections= new LinkedHashMap<String, Connection>();
 

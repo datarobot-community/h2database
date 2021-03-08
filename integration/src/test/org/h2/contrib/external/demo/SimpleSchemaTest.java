@@ -1,4 +1,4 @@
-package org.h2.contrib.external;
+package org.h2.contrib.external.demo;
 
 
 import org.h2.jdbc.JdbcConnection;
@@ -14,7 +14,7 @@ import java.sql.Statement;
 import java.text.MessageFormat;
 
 
-public class ExternalSchemaTest {
+public class SimpleSchemaTest {
 // ------------------------------ FIELDS ------------------------------
 
     private Connection h2;
@@ -37,7 +37,7 @@ public class ExternalSchemaTest {
     @Test
     public void extended() throws Exception {
         JdbcConnection conn2 = (JdbcConnection) DriverManager.getConnection("jdbc:h2:mem:memory", "sa2", "def");
-        conn2.attachExternalContext(new DemoContext());
+        conn2.setClientContext(new DemoContext("Uniq-1234"));
         Statement stat;
         stat = conn2.createStatement();
         stat.execute(MessageFormat.format("CREATE schema DEMO EXTERNAL (''{0}'','''')", DemoSchemaFactory.class.getName()));
@@ -46,11 +46,8 @@ public class ExternalSchemaTest {
             Assert.fail();
         } catch (SQLException e) {
             UnsupportedOperationException cause = (UnsupportedOperationException) e.getCause();
-            Assert.assertEquals(cause.getMessage(), "DEMO");
+            Assert.assertEquals(cause.getMessage(), "Simple failed for: Uniq-1234");
         }
     }
 
-    static class DemoContext {
-
-    }
 }

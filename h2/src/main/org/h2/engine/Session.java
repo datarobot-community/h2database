@@ -1800,12 +1800,12 @@ public class Session extends SessionWithState {
     }
 
     @Override
-    public void attachExternalContext(Object context) {
-        database.context = context;
+    public void setClientContext(Object clientContext) {
+        database.clientContext = clientContext;
     }
 
-    public Object getExternalContext() {
-        return database.context;
+    public Object getClientContext() {
+        return database.clientContext;
     }
 
     public void addExternalConnection(String name,

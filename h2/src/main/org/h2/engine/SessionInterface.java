@@ -167,9 +167,9 @@ public interface SessionInterface extends Closeable {
 
     void setColumnExtensionFactory(ColumnExtensionFactory columnExtensionFactory);
 
-    void attachExternalContext(Object context);
+    void setClientContext(Object context);
 
-    Object getExternalContext();
+    Object getClientContext();
 
     void addExternalConnection(String name, Connection connection);
 

@@ -2056,8 +2056,12 @@ public class JdbcConnection extends TraceObject implements Connection,
         return mode;
     }
 
-    public void attachExternalContext(Object context) {
-        session.attachExternalContext(context);
+    public void setClientContext(Object context) {
+        session.setClientContext(context);
+    }
+
+    public Object getClientContext() {
+        return session.getClientContext();
     }
 
     public void addExternalConnection(String name, Connection connection) {

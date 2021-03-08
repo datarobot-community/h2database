@@ -1,4 +1,4 @@
-package org.h2.contrib.external;
+package org.h2.contrib.external.demo;
 
 import org.h2.command.ddl.CreateTableData;
 import org.h2.engine.Database;
@@ -10,12 +10,12 @@ import org.h2.table.Table;
  * Created by Pavel on 10/9/2014.
  */
 public class DemoSchema extends Schema {
-    private final Object context;
+    private final DemoContext context;
     // --------------------------- CONSTRUCTORS ---------------------------
 
     public DemoSchema(Database database, int id, String schemaName, User owner) {
         super(database, id, schemaName, owner, false);
-        context = database.context;
+        context = (DemoContext) database.clientContext;
     }
 
 // ------------------------ INTERFACE METHODS ------------------------
@@ -41,6 +41,6 @@ public class DemoSchema extends Schema {
 
     @Override
     public Table createTable(CreateTableData data) {
-        throw new UnsupportedOperationException("DEMO");
+        throw new UnsupportedOperationException("Simple failed for: " + context.label);
     }
 }

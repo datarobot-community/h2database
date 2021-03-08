@@ -1,4 +1,4 @@
-package org.h2.contrib.external;
+package org.h2.contrib.external.demo;
 
 import org.h2.engine.Database;
 import org.h2.engine.User;

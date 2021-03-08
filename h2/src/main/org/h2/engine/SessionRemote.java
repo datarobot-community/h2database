@@ -893,12 +893,12 @@ public class SessionRemote extends SessionWithState implements DataHandler {
     }
 
     @Override
-    public void attachExternalContext(Object context) {
+    public void setClientContext(Object context) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Object getExternalContext() {
+    public Object getClientContext() {
         throw new UnsupportedOperationException();
     }
 

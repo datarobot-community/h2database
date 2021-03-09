@@ -42,51 +42,6 @@ public class FunctionTest {
 // -------------------------- OTHER METHODS --------------------------
 
     /**
-     * @throws Exception
-     */
-    @Test
-    public void dateadd2() throws Exception {
-        Assert.assertTrue(SysProperties.DATE_ADD_EXTENDED);
-        Statement statement = h2.createStatement();
-        statement.execute("CREATE TABLE ONE (T TIME, D DATE, DT TIMESTAMP)");
-        statement.execute("INSERT INTO ONE VALUES (TIME'11:12:13', DATE'2014-09-08', TIMESTAMP'2014-07-06 05:04:03')");
-        ResultSet rs;
-
-        rs = statement.executeQuery("select T, max(T), T + 2, T - 3, 4 + T from ONE;");
-        for (int i = 1; i <= 5; i++)
-            Assert.assertEquals(rs.getMetaData().getColumnType(i), Types.TIME);
-        rs.next();
-        Assert.assertEquals(rs.getString(1), "11:12:13");
-        Assert.assertEquals(rs.getString(2), "11:12:13");
-        Assert.assertEquals(rs.getString(3), "11:12:15");
-        Assert.assertEquals(rs.getString(4), "11:12:10");
-        Assert.assertEquals(rs.getString(5), "11:12:17");
-
-        rs = statement.executeQuery("select D, max(D), D + 2, D - 3, 4 + D from ONE;");
-
-        for (int i = 1; i <= 5; i++)
-            Assert.assertEquals(rs.getMetaData().getColumnType(i), Types.DATE);
-        rs.next();
-        Assert.assertEquals(rs.getString(1), "2014-09-08");
-        Assert.assertEquals(rs.getString(2), "2014-09-08");
-        Assert.assertEquals(rs.getString(3), "2014-09-10");
-        Assert.assertEquals(rs.getString(4), "2014-09-05");
-        Assert.assertEquals(rs.getString(5), "2014-09-12");
-
-        rs = statement.executeQuery("select DT, max(DT), DT + 2, DT - 3, 4 + DT from ONE;");
-
-        for (int i = 1; i <= 5; i++)
-            Assert.assertEquals(rs.getMetaData().getColumnType(i), Types.TIMESTAMP);
-        rs.next();
-        Assert.assertEquals(rs.getString(1), "2014-07-06 05:04:03.0");
-        Assert.assertEquals(rs.getString(2), "2014-07-06 05:04:03.0");
-        Assert.assertEquals(rs.getString(3), "2014-07-06 05:04:05.0");
-        Assert.assertEquals(rs.getString(4), "2014-07-06 05:04:00.0");
-        Assert.assertEquals(rs.getString(5), "2014-07-06 05:04:07.0");
-
-    }
-
-    /**
      * changed in version: 1.4.181.
      * DATE constant can not be specified with seconds
      */

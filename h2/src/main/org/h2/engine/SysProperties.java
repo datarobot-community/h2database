@@ -603,26 +603,10 @@ public class SysProperties {
     public static final boolean REMOVE_DUPLICATE_NAME_ON_CREATE_TABLE_AS = Utils.getProperty("h2.removeDuplicateNameOnCreateTableAs", false);
 
     /**
-     * System property <code>h2.useDateAddExtended</code> (default: false).<br />
-     * operations day+1 in interpreted as next day, not as add 1 second to the midnight of the current day
-     * <p>
-     * Similar to MSSQL function DATEADD,
-     * H2 follows Oracle here
-     * DB2 required for + operation to explicitly specify type of the added interval
-     */
-    public static final boolean DATE_ADD_EXTENDED = Utils.getProperty("h2.dateAddExtended", false);
-
-    /**
      * System property <code>h2.disableGeometry</code> (default: false).<br />
      * disable attempt to try to load Geometry class saving on one DBException while debugging
      */
     public static final boolean DISABLE_GEOMETRY = Utils.getProperty("h2.disableGeometry", false);
-
-    /**
-     * System property <code>h2.dateTimeDivideAsDouble</code> (default: false).<br />
-     * Division operations involving date/time produce double to avoid precision loss
-     */
-    public static final boolean DATE_TIME_DIVIDE_AS_DOUBLE = Utils.getProperty("h2.dateTimeDivideAsDouble", false);
 
     /**
      * System property <code>h2.</code> (default: false).<br />

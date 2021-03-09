@@ -176,10 +176,7 @@ public class ValueTime extends Value {
 
     @Override
     public Value divide(Value v, boolean noninteger, boolean allowZeroDivide) {
-        return
-                SysProperties.DATE_TIME_DIVIDE_AS_DOUBLE ?
-                        ValueDouble.get(nanos / (1000000000 * v.getDouble())) :
-                        ValueTime.fromNanos((long) (nanos / v.getDouble()));
+        return ValueTime.fromNanos((long) (nanos / v.getDouble()));
     }
 
     @Override

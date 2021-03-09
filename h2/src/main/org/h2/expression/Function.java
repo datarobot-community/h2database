@@ -108,8 +108,7 @@ public class Function extends Expression implements FunctionCall {
             SECOND = 114, WEEK = 115, YEAR = 116, CURRENT_DATE = 117,
             CURRENT_TIME = 118, CURRENT_TIMESTAMP = 119, EXTRACT = 120,
             FORMATDATETIME = 121, PARSEDATETIME = 122, ISO_YEAR = 123,
-            ISO_WEEK = 124, ISO_DAY_OF_WEEK = 125,
-            DATE_ADD_EXTENDED = 126;
+            ISO_WEEK = 124, ISO_DAY_OF_WEEK = 125;
 
     public static final int DATABASE = 150, USER = 151, CURRENT_USER = 152,
             IDENTITY = 153, SCOPE_IDENTITY = 154, AUTOCOMMIT = 155,
@@ -333,15 +332,10 @@ public class Function extends Expression implements FunctionCall {
                 VAR_ARGS, Value.TIMESTAMP);
         addFunctionNotDeterministic("NOW", NOW,
                 VAR_ARGS, Value.TIMESTAMP);
-        if (!SysProperties.DATE_ADD_EXTENDED) {
-            addFunction("DATEADD", DATE_ADD,
-                    3, Value.TIMESTAMP);
-            addFunction("TIMESTAMPADD", DATE_ADD,
-                    3, Value.LONG);
-        } else {
-            addFunction("DATEADD2", DATE_ADD_EXTENDED,
-                    3, 0);
-        }
+        addFunction("DATEADD", DATE_ADD,
+                3, Value.TIMESTAMP);
+        addFunction("TIMESTAMPADD", DATE_ADD,
+                3, Value.LONG);
         addFunction("DATEDIFF", DATE_DIFF,
                 3, Value.LONG);
         addFunction("TIMESTAMPDIFF", DATE_DIFF,
@@ -1501,9 +1495,6 @@ public class Function extends Expression implements FunctionCall {
             result = ValueTimestamp.get(dateadd(
                     v0.getString(), v1.getLong(), v2.getTimestamp()));
             break;
-        case DATE_ADD_EXTENDED:
-                result = dateAddExtended(v0.getString(), v1.getDouble(), v2);
-                break;
         case DATE_DIFF:
             result = ValueLong.get(datediff(
                     v0.getString(), v1.getTimestamp(), v2.getTimestamp()));
@@ -2512,14 +2503,6 @@ public class Function extends Expression implements FunctionCall {
             d = MathUtils.convertLongToInt(p);
             break;
         }
-        case DATE_ADD_EXTENDED: {
-            t = args[2].getType();
-            DataType type = DataType.getDataType(t);
-            p = PRECISION_UNKNOWN;
-            d = 0;
-            s = type.defaultScale;
-            break;
-        }
         default:
             t = info.returnDataType;
             DataType type = DataType.getDataType(t);
@@ -2832,33 +2815,4 @@ public class Function extends Expression implements FunctionCall {
         return info.bufferResultSetToLocalTemp;
     }
 
-    private static Value dateAddExtended(String part, double count, Value v) {
-
-        switch (v.getType()) {
-            case Value.DATE: {
-                Calendar calendar = Calendar.getInstance();
-                calendar.setTime(v.getDate());
-                calendar.add(Calendar.DAY_OF_MONTH, (int) count);
-                long t = calendar.getTime().getTime();
-                return ValueDate.get(new Date(t));
-            }
-            case Value.TIME: {
-                Calendar calendar = Calendar.getInstance();
-                calendar.setTime(v.getTime());
-                calendar.add(Calendar.SECOND, (int) count);
-                long t = calendar.getTime().getTime();
-                return ValueTime.get(new Time(t));
-            }
-            case Value.TIMESTAMP: {
-                Calendar calendar = Calendar.getInstance();
-                calendar.setTime(v.getTimestamp());
-                calendar.add(Calendar.SECOND, (int) count);
-                long t = calendar.getTime().getTime();
-                return ValueTimestamp.get(new Timestamp(t));
-            }
-            default:
-                DbException.throwInternalError("type=" + v.getType());
-                return null;
-        }
-    }
 }

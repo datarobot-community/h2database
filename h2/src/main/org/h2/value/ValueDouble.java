@@ -219,5 +219,4 @@ public class ValueDouble extends Value {
         return ValueDouble.get(value + v2.value);
     }
 
-
 }

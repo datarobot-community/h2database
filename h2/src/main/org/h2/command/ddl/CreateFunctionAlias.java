@@ -98,7 +98,7 @@ public class CreateFunctionAlias extends SchemaCommand {
     public void setSource(String source) {
         this.source = source;
     }
-	
+
     @Override
     public int getType() {
         return CommandInterface.CREATE_ALIAS;

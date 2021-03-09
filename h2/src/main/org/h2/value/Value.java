@@ -555,7 +555,6 @@ public abstract class Value {
         if (getType() == targetType) {
             return this;
         }
-
         try {
             // decimal conversion
             switch (targetType) {
@@ -1268,6 +1267,5 @@ public abstract class Value {
     public Value aggregate(Value v) {
         return add(v);
     }
-
 
 }

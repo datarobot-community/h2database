@@ -66,9 +66,7 @@ public class JavaFunction extends Expression implements FunctionCall {
             args[i] = e;
             allConst &= e.isConstant();
         }
-
         precision=optimizePrecision();
-
         if (allConst) {
             return ValueExpression.get(getValue(session));
         }
@@ -218,5 +216,4 @@ public class JavaFunction extends Expression implements FunctionCall {
             }
         }
     }
-
 }

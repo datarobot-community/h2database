@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.sql.SQLWarning;
 import java.util.ArrayList;
 
+import org.h2.contrib.UserDefinedConversion;
 import org.h2.contrib.external.ExternalIndexResolver;
 import org.h2.contrib.external.ExternalQueryExecutionReporter;
 import org.h2.api.DatabaseEventListener;
@@ -889,10 +890,6 @@ public class SessionRemote extends SessionWithState implements DataHandler {
     }
 
     @Override
-    public void setColumnExtensionFactory(ColumnExtensionFactory columnExtensionFactory) {
-    }
-
-    @Override
     public void setClientContext(Object context) {
         throw new UnsupportedOperationException();
     }
@@ -900,6 +897,15 @@ public class SessionRemote extends SessionWithState implements DataHandler {
     @Override
     public Object getClientContext() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setUserDefinedConversion(UserDefinedConversion conversion) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setColumnExtensionFactory(ColumnExtensionFactory columnExtensionFactory) {
     }
 
     public void addExternalConnection(String name,

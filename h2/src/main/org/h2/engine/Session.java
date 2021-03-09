@@ -19,6 +19,7 @@ import java.util.ArrayDeque;
 
 import java.sql.SQLWarning;
 
+import org.h2.contrib.UserDefinedConversion;
 import org.h2.contrib.external.ExternalIndexResolver;
 import org.h2.contrib.external.ExternalQueryExecutionReporter;
 import org.h2.api.ErrorCode;
@@ -1806,6 +1807,11 @@ public class Session extends SessionWithState {
 
     public Object getClientContext() {
         return database.clientContext;
+    }
+
+    @Override
+    public void setUserDefinedConversion(UserDefinedConversion conversion) {
+        database.setUserDefinedConversion(conversion);
     }
 
     public void addExternalConnection(String name,

@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.SQLWarning;
 import java.util.ArrayList;
 
+import org.h2.contrib.UserDefinedConversion;
 import org.h2.contrib.external.ExternalIndexResolver;
 import org.h2.contrib.external.ExternalQueryExecutionReporter;
 import org.h2.command.CommandInterface;
@@ -165,11 +166,13 @@ public interface SessionInterface extends Closeable {
 
     DbSettings getSettings();
 
-    void setColumnExtensionFactory(ColumnExtensionFactory columnExtensionFactory);
-
     void setClientContext(Object context);
 
     Object getClientContext();
+
+    void setUserDefinedConversion(UserDefinedConversion conversion);
+
+    void setColumnExtensionFactory(ColumnExtensionFactory columnExtensionFactory);
 
     void addExternalConnection(String name, Connection connection);
 

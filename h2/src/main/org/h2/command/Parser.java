@@ -33,7 +33,6 @@ import org.h2.command.ddl.AlterView;
 import org.h2.command.ddl.Analyze;
 import org.h2.command.ddl.CreateAggregate;
 import org.h2.command.ddl.CreateConstant;
-import org.h2.command.ddl.CreateConversion;
 import org.h2.command.ddl.CreateFunctionAlias;
 import org.h2.command.ddl.CreateIndex;
 import org.h2.command.ddl.CreateLinkedTable;
@@ -114,7 +113,6 @@ import org.h2.expression.Function;
 import org.h2.expression.FunctionCall;
 import org.h2.expression.JavaAggregate;
 import org.h2.expression.JavaFunction;
-import org.h2.expression.FunctionInfo;
 import org.h2.expression.Operation;
 import org.h2.expression.Parameter;
 import org.h2.expression.Rownum;
@@ -4365,8 +4363,6 @@ public class Parser {
             return parseCreateView(force, orReplace);
         } else if (readIf("ALIAS")) {
              return parseCreateFunctionAlias(force);
-        } else if (readIf("CONVERSION")) {
-            return parseCreateConversion();
         } else if (readIf("SEQUENCE")) {
             return parseCreateSequence();
         } else if (readIf("USER")) {
@@ -5041,51 +5037,6 @@ public class Parser {
         view.setOnCommitDrop(true);
         return view;
     }
-
-    private CreateConversion parseCreateConversion()  {
-        CreateConversion command = new CreateConversion(session);
-        String from=currentToken;
-        if(readIf("LONG")) {
-            if(readIf("RAW")) {
-                from += " RAW";
-            }
-        } else if(readIf("DOUBLE")) {
-            if(readIf("PRECISION")) {
-                from += " PRECISION";
-            }
-        } else if(readIf("CHARACTER")) {
-            if(readIf("VARYING")) {
-                from += " VARYING";
-            }
-        } else {
-            read();
-        }
-        read (",");
-        String to=currentToken;
-        if(readIf("LONG")) {
-            if(readIf("RAW")) {
-                to += " RAW";
-            }
-        } else if(readIf("DOUBLE")) {
-            if(readIf("PRECISION")) {
-                to += " PRECISION";
-            }
-        } else if(readIf("CHARACTER")) {
-            if(readIf("VARYING")) {
-                to += " VARYING";
-            }
-        } else {
-            read();
-        }
-        read (",");
-        DataType fromDataType = DataType.getTypeByName(from);
-        DataType toDataType = DataType.getTypeByName(to);
-        command.setFromDataType(fromDataType.type);
-        command.setToDataType(toDataType.type);
-        command.setJavaClass(readString());
-        return command;
-    }
-
 
     private CreateView parseCreateView(boolean force, boolean orReplace) {
         boolean ifNotExists = readIfNotExists();

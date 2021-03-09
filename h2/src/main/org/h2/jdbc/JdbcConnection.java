@@ -34,6 +34,7 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 
+import org.h2.contrib.UserDefinedConversion;
 import org.h2.contrib.external.ExternalIndexResolver;
 import org.h2.contrib.external.ExternalQueryExecutionReporter;
 import org.h2.api.ErrorCode;
@@ -2062,6 +2063,10 @@ public class JdbcConnection extends TraceObject implements Connection,
 
     public Object getClientContext() {
         return session.getClientContext();
+    }
+
+    public void setUserDefinedConversion(UserDefinedConversion conversion) {
+        session.setUserDefinedConversion(conversion);
     }
 
     public void addExternalConnection(String name, Connection connection) {

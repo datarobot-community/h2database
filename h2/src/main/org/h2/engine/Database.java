@@ -217,7 +217,7 @@ public class Database implements DataHandler {
 
     private Map<String, ExternalIndexResolver> externalIndexResolvers = new HashMap<String, ExternalIndexResolver>();
 
-    private UserDefinedConversion conversions[][] = new UserDefinedConversion[Value.TYPE_COUNT + 1][Value.TYPE_COUNT + 1];
+    private UserDefinedConversion conversion;
 
     private ExternalQueryExecutionReporter externalQueryExecutionReporter;
 
@@ -2956,19 +2956,12 @@ public class Database implements DataHandler {
         this.externalQueryExecutionReporter = externalQueryExecutionReporter;
     }
 
-    public void addConversion(int fromType, int toType, UserDefinedConversion convert) {
-        conversions[fromType][toType] = convert;
+    public void setUserDefinedConversion(UserDefinedConversion conversion) {
+        this.conversion = conversion;
     }
 
     public Value convertToUserDefined(Value value, int fromType, int targetType) {
-        UserDefinedConversion conversion =
-                fromType < conversions.length && targetType < conversions.length ?
-                        conversions[fromType][targetType] :
-                        null;
-        if (conversion != null) {
-            return conversion.convertTo(value, targetType);
-        } else {
-            return null;
-        }
+        return conversion == null ? null :
+                conversion.convertTo(value, fromType, targetType);
     }
 }

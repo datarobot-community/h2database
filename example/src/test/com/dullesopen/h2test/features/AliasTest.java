@@ -35,11 +35,6 @@ public class AliasTest {
         h2.close();
     }
 
-    @BeforeSuite
-    static public void beforeSuite() {
-        System.getProperties().put("h2.doubleNanSameAsNull", "true");
-    }
-
 // -------------------------- STATIC METHODS --------------------------
 
     @SuppressWarnings("unused")
@@ -60,11 +55,6 @@ public class AliasTest {
     @SuppressWarnings("unused")
     public static double my(double x, int y) {
         return 100 * x + 10 * y;
-    }
-
-    @SuppressWarnings("unused")
-    public static double nan(double x) {
-        return Double.NaN;
     }
 
     @SuppressWarnings("unused")
@@ -122,32 +112,6 @@ public class AliasTest {
             assertEquals(rs.getString(3), "CCC: 20");
         }
         statement.close();
-    }
-
-    @Test
-    public void nan() throws Exception {
-        {
-            Assert.assertTrue(SysProperties.DOUBLE_NAN_SAME_AS_NULL);
-            Statement statement = h2.createStatement();
-            statement.execute(MessageFormat.format("CREATE ALIAS isnan FOR \"java.lang.Double.isNaN\"", CLASS));
-
-            String sql = "select isnan(NULL) ";
-            ResultSet rs = statement.executeQuery(sql);
-            rs.next();
-            assertTrue(rs.getBoolean(1));
-            statement.close();
-        }
-        {
-            Assert.assertTrue(SysProperties.DOUBLE_NAN_SAME_AS_NULL);
-            Statement statement = h2.createStatement();
-            statement.execute(MessageFormat.format("CREATE ALIAS nan FOR \"{0}.nan\"", CLASS));
-
-            String sql = "select nan(10) is null";
-            ResultSet rs = statement.executeQuery(sql);
-            rs.next();
-            assertTrue(rs.getBoolean(1));
-            statement.close();
-        }
     }
 
     @Test

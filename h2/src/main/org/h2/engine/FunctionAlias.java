@@ -478,7 +478,7 @@ public class FunctionAlias extends SchemaObjectBase {
                             // otherwise the function can't be called at all.
                             o = DataType.getDefaultForPrimitiveType(paramClass);
                         } else {
-                            if (SysProperties.DOUBLE_NAN_SAME_AS_NULL) {
+                            if (database.getMode().doubleNanSameAsNull) {
                                 if (paramClass.equals(Double.TYPE)) {
                                     o = Double.NaN;
                                 } else if (paramClass.equals(Float.TYPE)) {
@@ -490,7 +490,7 @@ public class FunctionAlias extends SchemaObjectBase {
                                 return ValueNull.INSTANCE;
                             }
                         }
-                    } else if (SysProperties.DOUBLE_NAN_SAME_AS_NULL && paramClass.equals(String.class)) {
+                    } else if (database.getMode().doubleNanSameAsNull && paramClass.equals(String.class)) {
                         Value value = database.convertToUserDefined(v, args[a].getType(), Value.STRING);
                         if (value != null) {
                             o = value.getString();
@@ -538,7 +538,7 @@ public class FunctionAlias extends SchemaObjectBase {
                 if (Value.class.isAssignableFrom(method.getReturnType())) {
                     return (Value) returnValue;
                 }
-                if (SysProperties.DOUBLE_NAN_SAME_AS_NULL && returnValue instanceof Double) {
+                if (database.getMode().doubleNanSameAsNull && returnValue instanceof Double) {
                     double d = (Double) returnValue;
                     if (Double.isNaN(d))
                         return ValueNull.INSTANCE;

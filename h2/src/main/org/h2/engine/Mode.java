@@ -213,6 +213,16 @@ public class Mode {
 
     public boolean disableThreeValuedLogic;
 
+    /**
+     * For user defined function:
+     * Input argument: pass NULL as Double.NaN and Float.NaN for double and float
+     * Return value: convert Double.NaN to NULL.
+     * <p>
+     * not compatible with ANSI
+     */
+
+    public boolean doubleNanSameAsNull;
+
     private final String name;
 
     static {
@@ -330,6 +340,7 @@ public class Mode {
         mode.allowZeroDivide = true;
         mode.concatReturnSize = 200;
         mode.disableThreeValuedLogic = true;
+        mode.doubleNanSameAsNull = true;
         add(mode);
     }
 

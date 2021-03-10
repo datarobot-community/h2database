@@ -585,15 +585,6 @@ public class SysProperties {
         return Utils.scaleForAvailableMemory(defaultValue);
     }
 
-    /**
-     * System property <code>h2.replaceNullWithNan</code> (default: false).<br />
-     * For user defined function:
-     * Input argument: pass NULL as Double.NaN and Float.NaN for double and float
-     * Return value: convert Double.NaN to NULL.
-     * <p>
-     * not compatible with ANSI
-     */
-    public static final boolean DOUBLE_NAN_SAME_AS_NULL = Utils.getProperty("h2.doubleNanSameAsNull", false);
 
     /**
      * Remove duplicate column names from the resulting table

@@ -1,4 +1,4 @@
-package com.dullesopen.h2test.syntax;
+package other;
 
 import com.dullesopen.h2test.TestConfig;
 import com.dullesopen.h2test.Utils;
@@ -9,7 +9,10 @@ import org.testng.annotations.Test;
 
 import java.sql.*;
 
-public class GroupByTest {
+/**
+ * https://bitbucket.org/dullesresearch/h2database/issues/7/group-by-column-number
+ */
+public class GroupByColumnNumberTest {
 // ------------------------------ FIELDS ------------------------------
 
     private Connection ca;
@@ -35,8 +38,11 @@ public class GroupByTest {
         }
     }
 
+    /**
+     * Oracle does not support group by column number
+     */
     @Test
-    public void groupByIndexOracle() throws Exception {
+    public void oracle() throws Exception {
         if (TestConfig.ORACLE) {
             try (Statement statement = oracle.createStatement()) {
                 Utils.drop(statement, "DROP TABLE A");
@@ -51,14 +57,30 @@ public class GroupByTest {
         }
     }
 
+    /**
+     * Teradata supports group by column number
+     */
     @Test
-    public void groupByIndexTeradata() throws Exception {
+    public void teradata() throws Exception {
         if (TestConfig.TERADATA) {
             try (Statement statement = teradata.createStatement()) {
                 Utils.drop(statement, "DROP TABLE A");
                 statement.execute("CREATE TABLE A(X INT , Y INT, Z INT)");
-                statement.execute("INSERT INTO A VALUES(1,2,3)");
-                ResultSet rs = statement.executeQuery("SELECT X, SUM(Y), Z FROM A GROUP BY 1 , 3");
+                statement.execute("INSERT INTO A VALUES(1,123,2)");
+                statement.execute("INSERT INTO A VALUES(1,456,2)");
+                statement.execute("INSERT INTO A VALUES(3,789,4)");
+                try (ResultSet rs = statement.executeQuery("SELECT X, SUM(Y), Z FROM A GROUP BY 1 , 3 ORDER BY 1")) {
+                    rs.next();
+                    Assert.assertEquals(rs.getInt(1), 1);
+                    Assert.assertEquals(rs.getInt(2), 579);
+                    Assert.assertEquals(rs.getInt(3), 2);
+                    rs.next();
+                    Assert.assertEquals(rs.getInt(1), 3);
+                    Assert.assertEquals(rs.getInt(2), 789);
+                    Assert.assertEquals(rs.getInt(3), 4);
+                    rs.next();
+                    Assert.assertFalse(rs.next());
+                }
             }
         }
     }

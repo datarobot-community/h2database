@@ -11,7 +11,6 @@ import org.testng.annotations.Test;
 import java.sql.*;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
 
 
 public class GroupByTest {
@@ -68,67 +67,6 @@ public class GroupByTest {
             if (false) System.out.println(i + "/" + j);
             row++;
         }
-    }
-
-    @Test
-    public void byIndex() throws Exception {
-
-        Statement stat = h2.createStatement();
-        ResultSet rs = stat.executeQuery("SELECT X, SUM(Y), Z AS M FROM TWO GROUP BY 1, 3 ORDER BY 1, 3");
-
-        int row = 0;
-        while (rs.next()) {
-            int x = rs.getInt(1);
-            int y = rs.getInt(2);
-            int z = rs.getInt(3);
-            switch (row) {
-                case 0:
-                    Assert.assertEquals(x, 11);
-                    Assert.assertEquals(y, 203);
-                    Assert.assertEquals(z, 1001);
-                    break;
-                case 1:
-                    Assert.assertEquals(x, 11);
-                    Assert.assertEquals(y, 207);
-                    Assert.assertEquals(z, 1002);
-                    break;
-                case 2:
-                    Assert.assertEquals(x, 11);
-                    Assert.assertEquals(y, 105);
-                    Assert.assertEquals(z, 1003);
-                    break;
-            }
-            row++;
-        }
-        Assert.assertEquals(row, 3);
-    }
-
-    @Test
-    public void byIndexStar() throws Exception {
-
-        Statement stat = h2.createStatement();
-
-        ResultSet rs = stat.executeQuery("SELECT * FROM TWO GROUP BY 1, 2, 3");
-        int row = 0;
-        while (rs.next()) {
-            row++;
-        }
-        Assert.assertEquals(row, 5);
-    }
-
-    @Test
-    public void byIndexInvalid() throws Exception {
-
-        try {
-            Statement stat = h2.createStatement();
-            stat.executeQuery("SELECT X, SUM(Y) FROM TWO GROUP BY 1, 3");
-
-        } catch (SQLException e) {
-            Assert.assertEquals(e.getErrorCode(), ErrorCode.GROUP_BY_INVALID_INDEX);
-            Assert.assertEquals(Utils.truncate(e), "GROUP BY \"3\" is not valid. Select list contains \"2\" columns");
-        }
-
-
     }
 
     @Test
@@ -192,8 +130,6 @@ public class GroupByTest {
         }
 
         stat.execute("CREATE TABLE ANOTHER AS SELECT DISTINCT X FROM ONE GROUP BY X,Y");
-
-
     }
 
 }

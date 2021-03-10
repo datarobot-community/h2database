@@ -640,12 +640,12 @@ public class Schema extends DbObjectBase {
                                      String driver, String url, String user, String password,
                                      String externalConnectionName,
                                      String originalSchema, String originalTable,
-                                     boolean emitUpdates, boolean force, boolean view) {
+                                     boolean emitUpdates, boolean force, boolean query) {
         synchronized (database) {
             return new TableLink(this, id, tableName,
                     driver, url, user, password,
                     externalConnectionName,
-                    originalSchema, originalTable, emitUpdates, force, view, database.columnExtensionFactory);
+                    originalSchema, originalTable, emitUpdates, force, query);
         }
     }
 

@@ -1,9 +1,7 @@
-package com.dullesopen.h2test.features;
+package org.h2.contrib.link;
 
-import com.dullesopen.h2test.TestConfig;
-import com.dullesopen.h2test.Utils;
-import org.h2.engine.ColumnExtension;
-import org.h2.engine.ColumnExtensionFactory;
+import org.h2.contrib.external.TestConfig;
+import org.h2.contrib.test.Utils;
 import org.h2.engine.Session;
 import org.h2.engine.SessionInterface;
 import org.h2.jdbc.JdbcConnection;
@@ -20,7 +18,7 @@ import java.text.MessageFormat;
 /**
  * Miscellaneous test for linked table
  */
-public class ColumnExtensionTest {
+public class TableLinkColumnHandlerTest {
     private static final long DAY = (24 * 60 * 60 * 1000);
     // ------------------------------ FIELDS ------------------------------
 
@@ -82,8 +80,6 @@ public class ColumnExtensionTest {
 
     /**
      * confirm that H2 automatically converts datetime to date
-     *
-     * @throws Exception
      */
     @Test
     public void extension() throws Exception {
@@ -98,12 +94,7 @@ public class ColumnExtensionTest {
             Utils.drop(sa, "DROP TABLE ONE");
 
             SessionInterface session = h2.unwrap(JdbcConnection.class).getSession();
-            session.setColumnExtensionFactory(new ColumnExtensionFactory() {
-                @Override
-                public ColumnExtension create(Connection connection) {
-                    return new NoDateColumnExtension();
-                }
-            });
+            session.setTableLinkColumnHandlerFactory((connection, schema, table) -> new NoDateTableLinkColumnHandler());
             String sql = MessageFormat.format(
                     "CREATE LINKED VIEW W(''oracle.jdbc.driver.OracleDriver'', ''{0}'', ''h2user'', ''h2pass'', ''select * from one'');",
                     TestConfig.ORACLE_URL);
@@ -125,8 +116,6 @@ public class ColumnExtensionTest {
 
     /**
      * confirm that H2 automatically converts datetime to date
-     *
-     * @throws Exception
      */
     @Test
     public void insertConversion() throws Exception {
@@ -141,12 +130,7 @@ public class ColumnExtensionTest {
             Utils.drop(sa, "DROP TABLE ONE");
 
             SessionInterface session = h2.unwrap(JdbcConnection.class).getSession();
-            session.setColumnExtensionFactory(new ColumnExtensionFactory() {
-                @Override
-                public ColumnExtension create(Connection connection) {
-                    return new NoDateColumnExtension();
-                }
-            });
+            session.setTableLinkColumnHandlerFactory((connection, schema, table) -> new NoDateTableLinkColumnHandler());
             String sql = MessageFormat.format(
                     "CREATE LINKED TABLE T(''oracle.jdbc.driver.OracleDriver'', ''{0}'', ''h2user'', ''h2pass'', ''one'');",
                     TestConfig.ORACLE_URL);
@@ -179,12 +163,7 @@ public class ColumnExtensionTest {
             Utils.drop(sa, "DROP TABLE T2");
 
             SessionInterface session = h2.unwrap(JdbcConnection.class).getSession();
-            session.setColumnExtensionFactory(new ColumnExtensionFactory() {
-                @Override
-                public ColumnExtension create(Connection connection) {
-                    return new NoDateColumnExtension();
-                }
-            });
+            session.setTableLinkColumnHandlerFactory((connection, schema, table) -> new NoDateTableLinkColumnHandler());
             sa.execute(MessageFormat.format(
                     "CREATE LINKED TABLE T1(''oracle.jdbc.driver.OracleDriver'', ''{0}'', ''h2user'', ''h2pass'', ''H2USER'', ''ONE'');",
                     TestConfig.ORACLE_URL));
@@ -288,15 +267,11 @@ public class ColumnExtensionTest {
         Assert.assertEquals(metaData.getExtension(1), "AbC");
     }
 
-    private static class NoDateColumnExtension implements ColumnExtension {
+    private static class NoDateTableLinkColumnHandler implements TableLinkColumnHandler {
+        @SuppressWarnings("SwitchStatementWithTooFewBranches")
         @Override
         public Column createColumn(String name, int sqlType, int type, String typename, long precision, int scale, int displaySize) {
             switch (sqlType) {
-                case Types.NUMERIC: {
-                    Column column = new Column(name, type, precision, scale, displaySize);
-                    column.setExtension("abc");
-                    return column;
-                }
                 case Types.TIMESTAMP: {
                     Column column = new Column(name, Value.DOUBLE, 20, 20, 20);
                     column.setExtension("date");
@@ -310,6 +285,7 @@ public class ColumnExtensionTest {
             }
         }
 
+        @SuppressWarnings("SwitchStatementWithTooFewBranches")
         @Override
         public Value createValue(Session session, ResultSet rs, int columnIndex, int type) {
             try {
@@ -333,6 +309,7 @@ public class ColumnExtensionTest {
             }
         }
 
+        @SuppressWarnings("SwitchStatementWithTooFewBranches")
         @Override
         public void bindParameterValue(PreparedStatement prep, Value v, int i, int sqlType, String typeName) throws SQLException {
             switch (sqlType) {

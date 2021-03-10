@@ -1,12 +1,12 @@
-package org.h2.contrib.external;
+package org.h2.contrib.link;
 
 import java.sql.Connection;
 
 /**
- * Add notification for external RDBM query execution
+ * Add notification for linked query execution
  */
 
-public interface ExternalQueryExecutionReporter {
+public interface LinkedQueryExecutionReporter {
 
     /**
      * @param action true is only prepare statement is called without actual execution

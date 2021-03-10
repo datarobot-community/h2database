@@ -29,11 +29,11 @@ public class CreateLinkedTable extends SchemaCommand {
     private boolean temporary;
     private boolean globalTemporary;
     private boolean readOnly;
-    private boolean view;
+    private boolean isQuery;
 
-    public CreateLinkedTable(Session session, Schema schema, boolean view) {
+    public CreateLinkedTable(Session session, Schema schema, boolean isQuery) {
         super(session, schema);
-        this.view = view;
+        this.isQuery = isQuery;
     }
 
     public void setTableName(String tableName) {
@@ -78,7 +78,7 @@ public class CreateLinkedTable extends SchemaCommand {
         }
         int id = getObjectId();
         TableLink table = getSchema().createTableLink(id, tableName, driver, url,
-                user, password, externalConnectionName, originalSchema, originalTable, emitUpdates, force, view);
+                user, password, externalConnectionName, originalSchema, originalTable, emitUpdates, force, isQuery);
         table.setTemporary(temporary);
         table.setGlobalTemporary(globalTemporary);
         table.setComment(comment);

@@ -1,5 +1,6 @@
-package org.h2.engine;
+package org.h2.contrib.link;
 
+import org.h2.engine.Session;
 import org.h2.table.Column;
 import org.h2.value.Value;
 
@@ -7,7 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public interface ColumnExtension {
+public interface TableLinkColumnHandler {
 
     /**
      * create H2 column from the external database column

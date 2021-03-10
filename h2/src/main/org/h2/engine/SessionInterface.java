@@ -10,9 +10,10 @@ import java.sql.Connection;
 import java.sql.SQLWarning;
 import java.util.ArrayList;
 
-import org.h2.contrib.UserDefinedConversion;
-import org.h2.contrib.external.ExternalIndexResolver;
-import org.h2.contrib.external.ExternalQueryExecutionReporter;
+import org.h2.contrib.UdfArgumentConverter;
+import org.h2.contrib.link.TableLinkColumnHandlerFactory;
+import org.h2.contrib.link.LinkedIndexResolver;
+import org.h2.contrib.link.LinkedQueryExecutionReporter;
 import org.h2.command.CommandInterface;
 import org.h2.message.Trace;
 import org.h2.store.DataHandler;
@@ -170,15 +171,15 @@ public interface SessionInterface extends Closeable {
 
     Object getClientContext();
 
-    void setUserDefinedConversion(UserDefinedConversion conversion);
+    void setUdfArgumentConverter(UdfArgumentConverter conversion);
 
-    void setColumnExtensionFactory(ColumnExtensionFactory columnExtensionFactory);
+    void setTableLinkColumnHandlerFactory(TableLinkColumnHandlerFactory tableLinkColumnHandlerFactory);
 
-    void addExternalConnection(String name, Connection connection);
+    void addLinkedConnection(String connectionName, Connection connection);
 
-    void removeExternalConnection(String name);
+    void removeLinkedConnection(String connectionName);
 
-    void addExternalIndexResolver(String name, ExternalIndexResolver indexResolver);
+    void addLinkedIndexResolver(String connectionName, LinkedIndexResolver indexResolver);
 
-    void addExternalQueryExecutionReporter(ExternalQueryExecutionReporter reporter);
+    void addLinkedQueryExecutionReporter(LinkedQueryExecutionReporter reporter);
 }

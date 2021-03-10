@@ -34,9 +34,9 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 
-import org.h2.contrib.UserDefinedConversion;
-import org.h2.contrib.external.ExternalIndexResolver;
-import org.h2.contrib.external.ExternalQueryExecutionReporter;
+import org.h2.contrib.UdfArgumentConverter;
+import org.h2.contrib.link.LinkedIndexResolver;
+import org.h2.contrib.link.LinkedQueryExecutionReporter;
 import org.h2.api.ErrorCode;
 import org.h2.command.CommandInterface;
 import org.h2.engine.ConnectionInfo;
@@ -2065,23 +2065,23 @@ public class JdbcConnection extends TraceObject implements Connection,
         return session.getClientContext();
     }
 
-    public void setUserDefinedConversion(UserDefinedConversion conversion) {
-        session.setUserDefinedConversion(conversion);
+    public void setUdfArgumentConverter(UdfArgumentConverter conversion) {
+        session.setUdfArgumentConverter(conversion);
     }
 
-    public void addExternalConnection(String name, Connection connection) {
-        session.addExternalConnection(name, connection);
+    public void addExternalConnection(String connectionName, Connection connection) {
+        session.addLinkedConnection(connectionName, connection);
     }
 
-    public void removeExternalConnection(String name) {
-        session.removeExternalConnection(name);
+    public void removeExternalConnection(String connectionName) {
+        session.removeLinkedConnection(connectionName);
     }
 
-    public void addExternalIndexResolver(String name, ExternalIndexResolver indexResolver) {
-        session.addExternalIndexResolver(name, indexResolver);
+    public void addExternalIndexResolver(String connectionName, LinkedIndexResolver indexResolver) {
+        session.addLinkedIndexResolver(connectionName, indexResolver);
     }
 
-    public void addExternalQueryExecutionReporter(ExternalQueryExecutionReporter reporter) {
-        session.addExternalQueryExecutionReporter(reporter);
+    public void addExternalQueryExecutionReporter(LinkedQueryExecutionReporter reporter) {
+        session.addLinkedQueryExecutionReporter(reporter);
     }
 }

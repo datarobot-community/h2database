@@ -6178,14 +6178,14 @@ public class Parser {
 
     private CreateLinkedTable parseCreateLinkedTable(boolean temp,
             boolean globalTemp, boolean force) {
-        boolean view =false;
+        boolean isQuery =false;
         if (readIf("VIEW")) {
-            view=true;
+            isQuery=true;
         } else
             read("TABLE");
         boolean ifNotExists = readIfNotExists();
         String tableName = readIdentifierWithSchema();
-        CreateLinkedTable command = new CreateLinkedTable(session, getSchema(), view);
+        CreateLinkedTable command = new CreateLinkedTable(session, getSchema(), isQuery);
         command.setTemporary(temp);
         command.setGlobalTemporary(globalTemp);
         command.setForce(force);

@@ -20,12 +20,11 @@ import java.util.HashSet;
 import java.util.Arrays;
 import java.util.List;
 
-import org.h2.contrib.external.ExternalIndexResolver;
-import org.h2.contrib.external.ExternalQueryExecutionReporter;
 import org.h2.api.ErrorCode;
 import org.h2.command.Prepared;
-import org.h2.engine.ColumnExtension;
-import org.h2.engine.ColumnExtensionFactory;
+import org.h2.contrib.link.TableLinkColumnHandler;
+import org.h2.contrib.link.LinkedIndexResolver;
+import org.h2.contrib.link.LinkedQueryExecutionReporter;
 import org.h2.engine.Session;
 import org.h2.engine.UndoLogRecord;
 import org.h2.index.Index;
@@ -74,21 +73,14 @@ public class TableLink extends Table {
     private long precalculatedRowCount = -1;
 
     /**
-     * the table in the linked database is actually a view, difference is important for DROP statement
+     * Link is defined using query instead of schema and table name. There are some subtle differences in getting
+     * meta information about the database, so the difference is important to know
      */
-    private boolean view;
-
-    /**
-     * the local view created internally
-     * TODO. Since Oct 08 release this most probably can be done using standard H2 mechanism, it is in parentheses than
-     * TODO: it is local read only view, otherwise actual table
-     */
-    private boolean localView;
+    private final boolean isQuery;
 
     private final String externalConnectionName;
 
-    private final ColumnExtensionFactory columnExtensionFactory;
-    private ColumnExtension columnExtension;
+    public TableLinkColumnHandler tableLinkColumnHandler;
     ArrayList<ColumnLinkMetaData> columnLinkMetaData = New.arrayList();
     private Set<String> keywords = new HashSet<>();
 
@@ -126,8 +118,7 @@ public class TableLink extends Table {
                      String url, String user, String password,
                      String externalConnectionName,
                      String originalSchema, String originalTable,
-                     boolean emitUpdates, boolean force, boolean view,
-                     ColumnExtensionFactory columnExtensionFactory) {
+                     boolean emitUpdates, boolean force, boolean isQuery) {
         super(schema, id, name, false, true);
         this.driver = driver;
         this.url = url;
@@ -137,8 +128,7 @@ public class TableLink extends Table {
         this.originalSchema = originalSchema;
         this.originalTable = decode(originalTable);
         this.emitUpdates = emitUpdates;
-        this.localView = view;
-        this.columnExtensionFactory = columnExtensionFactory;
+        this.isQuery = isQuery;
         try {
             connect();
         } catch (DbException e) {
@@ -158,25 +148,12 @@ public class TableLink extends Table {
         for (int retry = 0;; retry++) {
             try {
                 if (!StringUtils.isNullOrEmpty(externalConnectionName)) {
-                    final Connection c = database.getExternalConnection(externalConnectionName);
-                    if (c == null)
-                        throw DbException.get(ErrorCode.EXTERNAL_CONNECTION_NOT_FOUND, externalConnectionName);
-                    conn = new BaseTableLinkConnection() {
-                        @Override
-                        public void close(boolean force) {
-                            //noop
-                        }
-
-                        @Override
-                        public Connection getConnection() {
-                            return c;
-                        }
-                    };
+                    conn = database.tableLinkSupport.getConnection(externalConnectionName);
                 } else
                     conn = database.getLinkConnection(driver, url, user, password);
-                columnExtension = columnExtensionFactory == null ?
+                tableLinkColumnHandler = database.tableLinkSupport.tableLinkColumnHandlerFactory == null ?
                         null :
-                        columnExtensionFactory.create(conn.getConnection());
+                        database.tableLinkSupport.tableLinkColumnHandlerFactory.create(conn.getConnection(), getSchema().getName(), getName());
 
                 try {
                     String[] list = conn.getConnection().getMetaData().getSQLKeywords().split(", *");
@@ -188,8 +165,8 @@ public class TableLink extends Table {
                 }
                 synchronized (conn) {
                     try {
-                        if (localView)
-                            view();
+                        if (isQuery)
+                            query();
                         else
                             readMetaData();
                         return;
@@ -219,8 +196,6 @@ public class TableLink extends Table {
         try {
             rs = meta.getTables(null, originalSchema, originalTable, null);
             if (rs.next()) {
-                view = rs.getString("TABLE_TYPE").equals("VIEW");
-
                 if (rs.next()) {
                     throw DbException.get(ErrorCode.SCHEMA_NAME_MUST_MATCH, originalTable);
                 }
@@ -264,8 +239,8 @@ public class TableLink extends Table {
                 int displaySize = MathUtils.convertLongToInt(precision);
                 int type = DataType.convertSQLTypeToValueType(sqlType, sqlTypeName);
 
-                Column col = columnExtension != null ?
-                        columnExtension.createColumn(n, sqlType, type, sqlTypeName,
+                Column col = tableLinkColumnHandler != null ?
+                        tableLinkColumnHandler.createColumn(n, sqlType, type, sqlTypeName,
                                 rs.getInt("COLUMN_SIZE"), rs.getInt("DECIMAL_DIGITS"), 0) :
                         new Column(n, type, precision, scale, displaySize);
                 col.setTable(this, i++);
@@ -292,7 +267,7 @@ public class TableLink extends Table {
             if (columnList.size() == 0) {
                 String sql = "SELECT * FROM " +
                         qualifiedTableName + " T WHERE 1=0";
-                database.reportExternalQueryExecution(ExternalQueryExecutionReporter.Action.EXECUTE_QUERY,
+                database.tableLinkSupport.reportLinkedQueryExecution(LinkedQueryExecutionReporter.Action.EXECUTE_QUERY,
                         getSchema().getName(), sql, conn.getConnection());
                 rs = stat.executeQuery(sql);
                 // alternative solution
@@ -309,8 +284,8 @@ public class TableLink extends Table {
                     int displaySize = rsMeta.getColumnDisplaySize(i + 1);
                     int type = DataType.getValueTypeFromResultSet(rsMeta, i + 1);
 
-                    Column col = columnExtension != null ?
-                            columnExtension.createColumn(n, sqlType, type, sqlTypeName,
+                    Column col = tableLinkColumnHandler != null ?
+                            tableLinkColumnHandler.createColumn(n, sqlType, type, sqlTypeName,
                                     rsMeta.getPrecision(i + 1), rsMeta.getScale(i + 1), displaySize) :
                             new Column(n, type, precision, scale, displaySize);
                     col.setTable(this, i++);
@@ -405,10 +380,11 @@ public class TableLink extends Table {
         if (indexName != null) {
             addIndex(list, indexType);
         }
-        ExternalIndexResolver indexResolver = externalConnectionName == null ? null :
-                database.getExternalIndexResolver(externalConnectionName);
-        if (indexResolver != null) {
-            indexes.addAll(indexResolver.getIndexes(this));
+        if (externalConnectionName != null) {
+            List<Index> ext = database.tableLinkSupport.getIndexes(externalConnectionName, this);
+            if (ext != null) {
+                indexes.addAll(ext);
+            }
         }
     }
 
@@ -542,8 +518,8 @@ public class TableLink extends Table {
 
     @Override
     public Index addIndex(Session session, String indexName, int indexId,
-                          IndexColumn[] cols, IndexType indexType, boolean create,
-                          String indexComment) {
+            IndexColumn[] cols, IndexType indexType, boolean create,
+            String indexComment) {
         throw DbException.getUnsupportedException("LINK");
     }
 
@@ -602,7 +578,7 @@ public class TableLink extends Table {
         // very ineffective for views
         if (precalculatedRowCount > -1)
             return precalculatedRowCount;
-        String sql = localView ?
+        String sql = isQuery ?
                 "SELECT COUNT (*) FROM (" + qualifiedTableName + ")"
                 : "SELECT COUNT(*) FROM " + qualifiedTableName + " as foo";
         try {
@@ -632,7 +608,7 @@ public class TableLink extends Table {
     }
 
     public String getQualifiedTable() {
-        return localView ? originalTable : qualifiedTableName;
+        return isQuery ? originalTable : qualifiedTableName;
     }
 
     /**
@@ -655,12 +631,12 @@ public class TableLink extends Table {
                     PreparedStatement prep = preparedMap.remove(sql);
                     Connection connection = conn.getConnection();
                     if (prep == null) {
-                        database.reportExternalQueryExecution(ExternalQueryExecutionReporter.Action.PREPARE,
+                        database.tableLinkSupport.reportLinkedQueryExecution(LinkedQueryExecutionReporter.Action.PREPARE,
                                 getSchema().getName(), sql, connection);
                         prep = connection.prepareStatement(sql);
                         prep.setFetchSize(database.getSettings().linkFetchSize);
                     } else {
-                        database.reportExternalQueryExecution(ExternalQueryExecutionReporter.Action.REUSE,
+                        database.tableLinkSupport.reportLinkedQueryExecution(LinkedQueryExecutionReporter.Action.REUSE,
                                 getSchema().getName(), sql, connection);
                     }
                     if (trace.isDebugEnabled()) {
@@ -681,13 +657,13 @@ public class TableLink extends Table {
                     if (params != null) {
                         for (int i = 0, size = params.size(); i < size; i++) {
                             Value v = params.get(i);
-                            if (columnExtension != null)
-                                columnExtension.bindParameterValue(prep, v, i + 1, paramMetaData.get(i).sqlType, paramMetaData.get(i).sqlTypeName);
+                            if (tableLinkColumnHandler != null)
+                                tableLinkColumnHandler.bindParameterValue(prep, v, i + 1, paramMetaData.get(i).sqlType, paramMetaData.get(i).sqlTypeName);
                             else
                                 v.set(prep, i + 1);
                         }
                     }
-                    database.reportExternalQueryExecution(ExternalQueryExecutionReporter.Action.EXECUTE,
+                    database.tableLinkSupport.reportLinkedQueryExecution(LinkedQueryExecutionReporter.Action.EXECUTE,
                             getSchema().getName(), sql, connection);
                     prep.execute();
                     if (reusePrepared) {
@@ -738,7 +714,7 @@ public class TableLink extends Table {
 
     @Override
     public TableType getTableType() {
-        return localView ? TableType.VIEW : TableType.TABLE_LINK;
+        return isQuery ? TableType.VIEW : TableType.TABLE_LINK;
     }
 
     @Override
@@ -887,11 +863,11 @@ public class TableLink extends Table {
     }
 
     public boolean isView() {
-        return localView;
+        return isQuery;
     }
 
 
-    private void view() throws SQLException {
+    private void query() throws SQLException {
         Connection connection = conn.getConnection();
         DatabaseMetaData meta = connection.getMetaData();
         storesLowerCase = meta.storesLowerCaseIdentifiers();
@@ -902,7 +878,7 @@ public class TableLink extends Table {
         ArrayList<Column> columnList = New.arrayList();
         HashMap<String, Column> columnMap = New.hashMap();
 
-        database.reportExternalQueryExecution(ExternalQueryExecutionReporter.Action.PREPARE,
+        database.tableLinkSupport.reportLinkedQueryExecution(LinkedQueryExecutionReporter.Action.PREPARE,
                 getSchema().getName(), originalTable, connection);
         PreparedStatement statement = connection.prepareStatement(originalTable);
         String db = connection.getMetaData().getDatabaseProductName();
@@ -912,7 +888,7 @@ public class TableLink extends Table {
         ResultSet query;
         boolean hive = db.equals("Apache Hive");
         if (hive) {
-            database.reportExternalQueryExecution(ExternalQueryExecutionReporter.Action.EXECUTE_QUERY,
+            database.tableLinkSupport.reportLinkedQueryExecution(LinkedQueryExecutionReporter.Action.EXECUTE_QUERY,
                     getSchema().getName(), originalTable, connection);
             query = statement.executeQuery();
             rs = query.getMetaData();
@@ -938,8 +914,8 @@ public class TableLink extends Table {
             int type = DataType.convertSQLTypeToValueType(sqlType, sqlTypeName);
             int displaySize = rs.getColumnDisplaySize(i);
 
-            Column col = columnExtension != null ?
-                    columnExtension.createColumn(n, sqlType, type, sqlTypeName, precision, scale, displaySize) :
+            Column col = tableLinkColumnHandler != null ?
+                    tableLinkColumnHandler.createColumn(n, sqlType, type, sqlTypeName, precision, scale, displaySize) :
                     new Column(n, type, precision, scale, displaySize);
             if (!n.equals(mixedCaseName))
                 col.setMixedCaseName(mixedCaseName);
@@ -962,7 +938,7 @@ public class TableLink extends Table {
 
     /**
      * Sets the actual row count of a linked table if there is a chance to know it.
-     * It can be set in {@link ExternalIndexResolver#getIndexes(TableLink)} method.
+     * It can be set in {@link LinkedIndexResolver#getIndexes(TableLink)} method.
      *
      * @param precalculatedRowCount actual row count of a linked table
      */
@@ -979,8 +955,8 @@ public class TableLink extends Table {
         return precalculatedRowCount < 0 ? 0 : precalculatedRowCount;
     }
 
-    public ColumnExtension getColumnExtension() {
-        return columnExtension;
+    public TableLinkColumnHandler getColumnExtension() {
+        return tableLinkColumnHandler;
     }
 
     /**

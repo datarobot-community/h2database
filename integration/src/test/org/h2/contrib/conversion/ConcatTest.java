@@ -25,7 +25,7 @@ public class ConcatTest {
         h2 = (JdbcConnection) DriverManager.getConnection("jdbc:h2:./target/db/concat;MODE=Carolina");
 
         try (Statement stat = h2.createStatement()) {
-            h2.setUserDefinedConversion(new ConversionTest.DoubleToDot());
+            h2.setUdfArgumentConverter(new ConversionTest.DoubleToDot());
             stat.execute("CREATE TABLE one ( abc double, def double)");
             stat.execute("INSERT INTO one(abc,def) VALUES(10.,20.)");
         }

@@ -1,6 +1,5 @@
-package com.dullesopen.h2test.schema;
+package org.h2.contrib.link;
 
-import org.h2.contrib.external.ExternalQueryExecutionReporter;
 import org.h2.jdbc.JdbcConnection;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -13,7 +12,7 @@ import java.util.List;
 /**
  * Created by Pavel on 10/7/2016.
  */
-public class LinkedViewTest {
+public class LinkedQueryTest {
 
     @Test
     public void linkedView() throws Exception {
@@ -48,14 +47,11 @@ public class LinkedViewTest {
         JdbcConnection cb = (JdbcConnection) DriverManager.getConnection("jdbc:h2:mem:");
 
         cb.addExternalConnection("one", ca);
-        final List<String> messages = new ArrayList<String>();
-        cb.addExternalQueryExecutionReporter(new ExternalQueryExecutionReporter() {
-            @Override
-            public void report(Action action, String schema, String sql, Connection connection) {
-                String msg = action + " : " + schema + " : " + sql;
-                System.out.println("msg = " + msg);
-                messages.add(msg);
-            }
+        final List<String> messages = new ArrayList<>();
+        cb.addExternalQueryExecutionReporter((action, schema, sql, connection) -> {
+            String msg = action + " : " + schema + " : " + sql;
+            System.out.println("msg = " + msg);
+            messages.add(msg);
         });
         Statement sa = ca.createStatement();
         sa.execute("CREATE TABLE A (B INT)");

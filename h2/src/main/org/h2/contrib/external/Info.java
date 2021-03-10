@@ -33,10 +33,6 @@ public class Info {
      * name of the map with meta information about secondary indices
      */
     static final String INDICES = "indices";
-    /**
-     * prefix for the map with the actual index
-     */
-    static final String INDEX_MAP_PREFIX = "index.";
 
 // -------------------------- INNER CLASSES --------------------------
 

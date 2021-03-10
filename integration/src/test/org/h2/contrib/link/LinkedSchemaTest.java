@@ -1,6 +1,5 @@
-package com.dullesopen.h2test.schema;
+package org.h2.contrib.link;
 
-import org.h2.contrib.external.ExternalQueryExecutionReporter;
 import org.h2.jdbc.JdbcConnection;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -59,7 +58,7 @@ public class LinkedSchemaTest {
         try {
             sb.executeQuery("SELECT * FROM db2.unknown ");
             Assert.fail();
-        } catch (SQLException e) {
+        } catch (SQLException ignored) {
         }
 
         ResultSet rs = sb.executeQuery("SELECT * FROM db2.A ");
@@ -105,14 +104,11 @@ public class LinkedSchemaTest {
         JdbcConnection h2 = (JdbcConnection) DriverManager.getConnection("jdbc:h2:mem:");
 
         h2.addExternalConnection("#one#", rdbm);
-        final List<String> messages = new ArrayList<String>();
-        h2.addExternalQueryExecutionReporter(new ExternalQueryExecutionReporter() {
-            @Override
-            public void report(Action action, String schema, String sql, Connection connection) {
-                String msg = action + " : " + schema + " : " + sql;
-                System.out.println("msg = " + msg);
-                messages.add(msg);
-            }
+        final List<String> messages = new ArrayList<>();
+        h2.addExternalQueryExecutionReporter((action, schema, sql, connection) -> {
+            String msg = action + " : " + schema + " : " + sql;
+            System.out.println("msg = " + msg);
+            messages.add(msg);
         });
 
         Statement sa = rdbm.createStatement();

@@ -19,9 +19,10 @@ import java.util.ArrayDeque;
 
 import java.sql.SQLWarning;
 
-import org.h2.contrib.UserDefinedConversion;
-import org.h2.contrib.external.ExternalIndexResolver;
-import org.h2.contrib.external.ExternalQueryExecutionReporter;
+import org.h2.contrib.UdfArgumentConverter;
+import org.h2.contrib.link.TableLinkColumnHandlerFactory;
+import org.h2.contrib.link.LinkedIndexResolver;
+import org.h2.contrib.link.LinkedQueryExecutionReporter;
 import org.h2.api.ErrorCode;
 import org.h2.command.Command;
 import org.h2.command.CommandInterface;
@@ -1796,11 +1797,6 @@ public class Session extends SessionWithState {
     }
 
     @Override
-    public void setColumnExtensionFactory(ColumnExtensionFactory columnExtensionFactory) {
-        database.columnExtensionFactory = columnExtensionFactory;
-    }
-
-    @Override
     public void setClientContext(Object clientContext) {
         database.clientContext = clientContext;
     }
@@ -1810,26 +1806,31 @@ public class Session extends SessionWithState {
     }
 
     @Override
-    public void setUserDefinedConversion(UserDefinedConversion conversion) {
-        database.setUserDefinedConversion(conversion);
-    }
-
-    public void addExternalConnection(String name,
-                                      Connection connection) {
-        database.addExternalConnection(name, connection);
+    public void setUdfArgumentConverter(UdfArgumentConverter conversion) {
+        database.setUdfArgumentConverter(conversion);
     }
 
     @Override
-    public void removeExternalConnection(String name) {
-        database.removeExternalConnection(name);
+    public void setTableLinkColumnHandlerFactory(TableLinkColumnHandlerFactory tableLinkColumnHandlerFactory) {
+        database.tableLinkSupport.tableLinkColumnHandlerFactory = tableLinkColumnHandlerFactory;
+    }
+
+    public void addLinkedConnection(String connectionName,
+                                    Connection connection) {
+        database.tableLinkSupport.addLinkedConnection(connectionName, connection);
     }
 
     @Override
-    public void addExternalIndexResolver(String name, ExternalIndexResolver indexResolver) {
-        database.addExternalIndexResolver(name, indexResolver);
+    public void removeLinkedConnection(String connectionName) {
+        database.tableLinkSupport.removeLinkedConnection(connectionName);
     }
 
-    public void addExternalQueryExecutionReporter(ExternalQueryExecutionReporter externalQueryExecutionReporter) {
-        database.setExternalQueryExecutionReporter(externalQueryExecutionReporter);
+    @Override
+    public void addLinkedIndexResolver(String connectionName, LinkedIndexResolver indexResolver) {
+        database.tableLinkSupport.addLinkedIndexResolver(connectionName, indexResolver);
+    }
+
+    public void addLinkedQueryExecutionReporter(LinkedQueryExecutionReporter linkedQueryExecutionReporter) {
+        database.tableLinkSupport.setLinkedQueryExecutionReporter(linkedQueryExecutionReporter);
     }
 }

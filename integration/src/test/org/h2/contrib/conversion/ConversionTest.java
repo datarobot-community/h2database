@@ -1,11 +1,10 @@
 package org.h2.contrib.conversion;
 
-import org.h2.contrib.UserDefinedConversion;
+import org.h2.contrib.UdfArgumentConverter;
 import org.h2.jdbc.JdbcConnection;
 import org.h2.value.Value;
 import org.h2.value.ValueNull;
 import org.h2.value.ValueString;
-import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeSuite;
@@ -38,7 +37,7 @@ public class ConversionTest {
     protected void setUp() throws Exception {
         Class.forName("org.h2.Driver");
         h2 = (JdbcConnection) DriverManager.getConnection("jdbc:h2:mem:");
-        h2.setUserDefinedConversion(new DoubleToDot());
+        h2.setUdfArgumentConverter(new DoubleToDot());
     }
 
     @AfterMethod
@@ -93,7 +92,7 @@ public class ConversionTest {
 // -------------------------- INNER CLASSES --------------------------
 
     @SuppressWarnings("unused")
-    public static class DoubleToDot implements UserDefinedConversion {
+    public static class DoubleToDot implements UdfArgumentConverter {
         public Value convertTo(Value value, int fromType, int toType) {
             if (toType != Value.STRING) {
                 return null;

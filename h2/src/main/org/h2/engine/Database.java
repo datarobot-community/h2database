@@ -6,13 +6,10 @@
 package org.h2.engine;
 
 import java.io.IOException;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -20,8 +17,6 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import org.h2.contrib.external.ExternalIndexResolver;
-import org.h2.contrib.external.ExternalQueryExecutionReporter;
 import org.h2.api.DatabaseEventListener;
 import org.h2.api.ErrorCode;
 import org.h2.api.JavaObjectSerializer;
@@ -30,7 +25,8 @@ import org.h2.command.CommandInterface;
 import org.h2.command.ddl.CreateTableData;
 import org.h2.command.dml.SetTypes;
 import org.h2.constraint.Constraint;
-import org.h2.contrib.UserDefinedConversion;
+import org.h2.contrib.UdfArgumentConverter;
+import org.h2.contrib.link.TableLinkSupport;
 import org.h2.index.Cursor;
 import org.h2.index.Index;
 import org.h2.index.IndexType;
@@ -206,20 +202,14 @@ public class Database implements DataHandler {
     private QueryStatisticsData queryStatisticsData;
     private RowFactory rowFactory = RowFactory.DEFAULT;
 
-    public ColumnExtensionFactory columnExtensionFactory;
-
     /**
      * client context to be passed to external schemas if required
      */
     public Object clientContext;
 
-    private Map<String, Connection> externalConnections= new LinkedHashMap<String, Connection>();
+    private UdfArgumentConverter udfArgumentConverter;
 
-    private Map<String, ExternalIndexResolver> externalIndexResolvers = new HashMap<String, ExternalIndexResolver>();
-
-    private UserDefinedConversion conversion;
-
-    private ExternalQueryExecutionReporter externalQueryExecutionReporter;
+    public TableLinkSupport tableLinkSupport = new TableLinkSupport();
 
     public Database(ConnectionInfo ci, String cipher) {
         String name = ci.getName();
@@ -2922,46 +2912,12 @@ public class Database implements DataHandler {
         return engine;
     }
 
-    public void addExternalConnection(String name, Connection connection) {
-        externalConnections.put(name,connection);
-    }
-
-    public Connection getExternalConnection(String name) {
-        return externalConnections.get(name);
-    }
-
-    /**
-     * the connection are keyed by the whole object
-     * so the removal is a little bit tricky
-     * @param name
-     */
-    public void removeExternalConnection(String name) {
-        externalConnections.remove(name);
-    }
-
-    public void addExternalIndexResolver(String name, ExternalIndexResolver indexResolver) {
-        externalIndexResolvers.put(name, indexResolver);
-    }
-
-    public ExternalIndexResolver getExternalIndexResolver(String name) {
-        return externalIndexResolvers.get(name);
-    }
-
-    public void reportExternalQueryExecution(ExternalQueryExecutionReporter.Action action, String schema, String sql, Connection connection) {
-        if (externalQueryExecutionReporter != null)
-            externalQueryExecutionReporter.report(action, schema, sql, connection);
-    }
-
-    public void setExternalQueryExecutionReporter(ExternalQueryExecutionReporter externalQueryExecutionReporter) {
-        this.externalQueryExecutionReporter = externalQueryExecutionReporter;
-    }
-
-    public void setUserDefinedConversion(UserDefinedConversion conversion) {
-        this.conversion = conversion;
+    public void setUdfArgumentConverter(UdfArgumentConverter conversion) {
+        this.udfArgumentConverter = conversion;
     }
 
     public Value convertToUserDefined(Value value, int fromType, int targetType) {
-        return conversion == null ? null :
-                conversion.convertTo(value, fromType, targetType);
+        return udfArgumentConverter == null ? null :
+                udfArgumentConverter.convertTo(value, fromType, targetType);
     }
 }

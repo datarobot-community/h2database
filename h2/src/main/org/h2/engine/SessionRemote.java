@@ -11,9 +11,10 @@ import java.sql.Connection;
 import java.sql.SQLWarning;
 import java.util.ArrayList;
 
-import org.h2.contrib.UserDefinedConversion;
-import org.h2.contrib.external.ExternalIndexResolver;
-import org.h2.contrib.external.ExternalQueryExecutionReporter;
+import org.h2.contrib.UdfArgumentConverter;
+import org.h2.contrib.link.TableLinkColumnHandlerFactory;
+import org.h2.contrib.link.LinkedIndexResolver;
+import org.h2.contrib.link.LinkedQueryExecutionReporter;
 import org.h2.api.DatabaseEventListener;
 import org.h2.api.ErrorCode;
 import org.h2.api.JavaObjectSerializer;
@@ -900,31 +901,31 @@ public class SessionRemote extends SessionWithState implements DataHandler {
     }
 
     @Override
-    public void setUserDefinedConversion(UserDefinedConversion conversion) {
+    public void setUdfArgumentConverter(UdfArgumentConverter conversion) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void setColumnExtensionFactory(ColumnExtensionFactory columnExtensionFactory) {
+    public void setTableLinkColumnHandlerFactory(TableLinkColumnHandlerFactory tableLinkColumnHandlerFactory) {
     }
 
-    public void addExternalConnection(String name,
-                                      Connection connection) {
+    public void addLinkedConnection(String connectionName,
+                                    Connection connection) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void removeExternalConnection(String name) {
+    public void removeLinkedConnection(String connectionName) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void addExternalIndexResolver(String name, ExternalIndexResolver indexResolver) {
+    public void addLinkedIndexResolver(String connectionName, LinkedIndexResolver indexResolver) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void addExternalQueryExecutionReporter(ExternalQueryExecutionReporter reporter) {
+    public void addLinkedQueryExecutionReporter(LinkedQueryExecutionReporter reporter) {
         throw new UnsupportedOperationException();
     }
 }

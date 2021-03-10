@@ -37,7 +37,7 @@ public class SchemaLink extends Schema {
         this.externalConnectionName = externalConnectionName;
         this.original = StringUtils.isNullOrEmpty(original) ? null : original;
 
-        connection = database.getExternalConnection(externalConnectionName);
+        connection = database.tableLinkSupport.getLinkedConnection(externalConnectionName);
 
     }
 
@@ -91,7 +91,7 @@ public class SchemaLink extends Schema {
                 int id = session.getDatabase().allocateObjectId();
 
                 table = new TableLink(this, id, name, null, null, null, null, externalConnectionName, original, name,
-                        false, false, false, database.columnExtensionFactory);
+                        false, false, false);
                 linked.put(name, table);
 
             }

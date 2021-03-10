@@ -9,7 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import org.h2.api.ErrorCode;
-import org.h2.engine.SysProperties;
+import org.h2.engine.Mode;
 import org.h2.message.DbException;
 
 /**
@@ -208,9 +208,9 @@ public class ValueDouble extends Value {
     }
 
     @Override
-    public Value aggregate(Value v) {
+    public Value aggregate(Value v, Mode mode) {
         ValueDouble v2 = (ValueDouble) v;
-        if (SysProperties.AGGREGATE_IGNORE_NAN_INFINITE) {
+        if (mode.aggregateIgnoreNanInfinite) {
             if ((Double.isNaN(v2.value) || Double.isInfinite(v2.value)))
                 return this;
             if ((Double.isNaN(value) || Double.isInfinite(value)))

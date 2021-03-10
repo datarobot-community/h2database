@@ -7,6 +7,7 @@ package org.h2.value;
 
 import org.h2.api.ErrorCode;
 import org.h2.engine.Constants;
+import org.h2.engine.Mode;
 import org.h2.engine.SysProperties;
 import org.h2.message.DbException;
 import org.h2.store.DataHandler;
@@ -1264,7 +1265,7 @@ public abstract class Value {
         // this is a marker interface
     }
 
-    public Value aggregate(Value v) {
+    public Value aggregate(Value v, Mode mode) {
         return add(v);
     }
 

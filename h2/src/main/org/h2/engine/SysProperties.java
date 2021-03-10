@@ -599,10 +599,4 @@ public class SysProperties {
      */
     public static final boolean DISABLE_GEOMETRY = Utils.getProperty("h2.disableGeometry", false);
 
-    /**
-     * System property <code>h2.</code> (default: false).<br />
-     * Skip over NaN and Infinite for aggregate calculations
-     */
-    public static final boolean AGGREGATE_IGNORE_NAN_INFINITE = Utils.getProperty("h2.aggregateIgnoreNanInfinite", false);
-
 }

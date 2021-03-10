@@ -21,12 +21,6 @@ public class AggregateTest {
 
 // -------------------------- TEST METHODS --------------------------
 
-    @BeforeSuite
-    static protected void beforeSuite() {
-        System.setProperty("h2.aggregateIgnoreNanInfinite", "true");
-    }
-
-
     @BeforeMethod
     protected void setUp() throws Exception {
         Class.forName("org.h2.Driver");

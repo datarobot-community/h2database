@@ -51,7 +51,7 @@ class AggregateDataDefault extends AggregateData {
                 value = v.convertTo(dataType);
             } else {
                 v = v.convertTo(value.getType());
-                value = value.aggregate(v);
+                value = value.aggregate(v, database.getMode());
             }
             break;
         case Aggregate.AVG:
@@ -59,7 +59,7 @@ class AggregateDataDefault extends AggregateData {
                 value = v.convertTo(DataType.getAddProofType(dataType));
             } else {
                 v = v.convertTo(value.getType());
-                value = value.aggregate(v);
+                value = value.aggregate(v, database.getMode());
             }
             break;
         case Aggregate.MIN:

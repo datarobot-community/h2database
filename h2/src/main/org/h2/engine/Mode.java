@@ -223,6 +223,11 @@ public class Mode {
 
     public boolean doubleNanSameAsNull;
 
+    /**
+     * Skip over NaN and Infinite for aggregate calculations
+     */
+    public boolean aggregateIgnoreNanInfinite;
+
     private final String name;
 
     static {
@@ -341,6 +346,7 @@ public class Mode {
         mode.concatReturnSize = 200;
         mode.disableThreeValuedLogic = true;
         mode.doubleNanSameAsNull = true;
+        mode.aggregateIgnoreNanInfinite = true;
         add(mode);
     }
 

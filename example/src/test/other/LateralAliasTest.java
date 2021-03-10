@@ -1,4 +1,4 @@
-package com.dullesopen.h2test.syntax;
+package other;
 
 import com.dullesopen.h2test.TestConfig;
 import com.dullesopen.h2test.Utils;
@@ -9,7 +9,10 @@ import org.testng.annotations.Test;
 
 import java.sql.*;
 
-public class CalculatedAliasTest {
+/**
+ * https://bitbucket.org/dullesresearch/h2database/issues/3/lateral-column-alias
+ */
+public class LateralAliasTest {
     // ------------------------------ FIELDS ------------------------------
 
     private Connection ca;
@@ -35,8 +38,11 @@ public class CalculatedAliasTest {
         }
     }
 
+    /**
+     * Oracle does not support lateral column alias
+     */
     @Test
-    public void computedOracle() throws Exception {
+    public void oracle() throws Exception {
         if (TestConfig.ORACLE) {
             try (Statement statement = oracle.createStatement()) {
                 Utils.drop(statement, "DROP TABLE A");
@@ -56,8 +62,11 @@ public class CalculatedAliasTest {
         }
     }
 
+    /**
+     * Teradata supports lateral column alias without requiring any additional keyword
+     */
     @Test
-    public void computedTeradata() throws Exception {
+    public void teradata() throws Exception {
         if (TestConfig.TERADATA) {
             try (Statement statement = teradata.createStatement()) {
                 Utils.drop(statement, "DROP TABLE A");

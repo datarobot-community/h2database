@@ -157,7 +157,7 @@ import org.h2.value.ValueTime;
 import org.h2.value.ValueTimestamp;
 
 import org.h2.command.dml.GroupBy;
-import org.h2.expression.CalculatedAlias;
+import org.h2.expression.LateralAlias;
 
 /**
  * The parser is used to convert a SQL statement string to an command object.
@@ -2897,7 +2897,7 @@ public class Parser {
             break;
         case IDENTIFIER:
             if (database.getMode().calculatedAlias && readIf("CALCULATED")) {
-                r = new CalculatedAlias(currentToken);
+                r = new LateralAlias(currentToken);
                 read();
                 break;
             }

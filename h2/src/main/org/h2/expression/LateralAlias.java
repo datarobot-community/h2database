@@ -15,12 +15,12 @@ import java.util.ArrayList;
 /**
  * A mathematical expression, or string concatenation.
  */
-public class CalculatedAlias extends Expression {
+public class LateralAlias extends Expression {
 
     private String name;
     private Expression alias;
 
-    public CalculatedAlias(String name) {
+    public LateralAlias(String name) {
         this.name = name;
     }
 
@@ -43,7 +43,7 @@ public class CalculatedAlias extends Expression {
                 return;
             }
         }
-        throw DbException.get(ErrorCode.CALCULATED_ALIAS_NOT_FOUND, name);
+        throw DbException.get(ErrorCode.LATERAL_ALIAS_NOT_FOUND, name);
     }
 
     @Override

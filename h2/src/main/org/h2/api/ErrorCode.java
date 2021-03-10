@@ -2016,10 +2016,10 @@ public class ErrorCode {
 
 
     /**
-     * The error with code <code>90803</code> is thrown when calculated alias
+     * The error with code <code>90803</code> is thrown when lateral alias
      * not found in the resolve list or used before definition
      */
-    public static final int CALCULATED_ALIAS_NOT_FOUND = 90803;
+    public static final int LATERAL_ALIAS_NOT_FOUND = 90803;
 
 
     public static final int DUPLICATE_COLUMN_NAME_W = 99001;

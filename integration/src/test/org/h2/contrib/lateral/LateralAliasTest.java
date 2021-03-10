@@ -1,7 +1,7 @@
-package com.dullesopen.h2test.features;
+package org.h2.contrib.lateral;
 
-import com.dullesopen.h2test.Utils;
 import org.h2.api.ErrorCode;
+import org.h2.contrib.test.Utils;
 import org.h2.store.fs.FileUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
@@ -11,7 +11,7 @@ import org.testng.annotations.Test;
 import java.sql.*;
 
 
-public class CalculatedAliasTest {
+public class LateralAliasTest {
 // ------------------------------ FIELDS ------------------------------
 
     private Connection h2;
@@ -65,14 +65,14 @@ public class CalculatedAliasTest {
             try {
                 statement.executeQuery("SELECT CALCULATED Z , X + Y AS Z FROM B");
             } catch (SQLException e) {
-                Assert.assertEquals(e.getErrorCode(), ErrorCode.CALCULATED_ALIAS_NOT_FOUND);
-                Assert.assertEquals(Utils.truncate(e), "CALCULATED column \"Z\" not defined before usage");
+                Assert.assertEquals(e.getErrorCode(), ErrorCode.LATERAL_ALIAS_NOT_FOUND);
+                Assert.assertEquals(Utils.truncate(e), "LATERAL column alias \"Z\" not defined before usage");
             }
             try {
                 statement.executeQuery("SELECT CALCULATED W , X + Y AS Z FROM B");
             } catch (SQLException e) {
-                Assert.assertEquals(e.getErrorCode(), ErrorCode.CALCULATED_ALIAS_NOT_FOUND);
-                Assert.assertEquals(Utils.truncate(e), "CALCULATED column \"W\" not defined before usage");
+                Assert.assertEquals(e.getErrorCode(), ErrorCode.LATERAL_ALIAS_NOT_FOUND);
+                Assert.assertEquals(Utils.truncate(e), "LATERAL column alias \"W\" not defined before usage");
             }
 
         }

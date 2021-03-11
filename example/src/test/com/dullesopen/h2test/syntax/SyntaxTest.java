@@ -3,6 +3,7 @@ package com.dullesopen.h2test.syntax;
 import com.dullesopen.h2test.TestConfig;
 import com.dullesopen.h2test.Utils;
 import org.h2.api.ErrorCode;
+import org.h2.engine.Constants;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
@@ -222,8 +223,11 @@ public class SyntaxTest {
             Assert.fail();
         } catch (SQLException e) {
             Assert.assertEquals(e.getErrorCode(), ErrorCode.SYNTAX_ERROR_2);
+            //noinspection ConstantConditions
             Assert.assertEquals(Utils.truncate(e),
-                    "Syntax error in SQL statement \"SELECT MIN(X,[*]Y) FROM ONE \"; expected \"., (, [, ::, *, /, %, +, -, ||, ~, !~, NOT, LIKE, ILIKE, REGEXP, IS, IN, BETWEEN, AND, OR, )\"");
+                    Constants.BUILD_ID < 201 ?
+                            "Syntax error in SQL statement \"SELECT MIN(X,[*]Y) FROM ONE \"; expected \"., (, [, ::, *, /, %, +, -, ||, ~, !~, NOT, LIKE, ILIKE, REGEXP, IS, IN, BETWEEN, AND, OR, )\"" :
+                            "Syntax error in SQL statement \"SELECT MIN(X,[*]Y) FROM ONE\"; expected \"(, {, ], :=, AT, FORMAT, ,, %, ;, +, -, ||, NOT, IS, ILIKE, REGEXP, AND, OR, )\"");
         }
         sa.execute("DROP TABLE ONE");
     }
@@ -409,13 +413,17 @@ public class SyntaxTest {
     @Test
     public void testComplexConstraint() throws Exception {
         Statement sa = h2.createStatement();
-        sa.execute("CREATE TABLE A(X INT, Y INT, CONSTRAINT XX CHECK ( X * Y > 0))"); // OK
-        sa.execute("CREATE TABLE B(X INT, Y INT CONSTRAINT XX CHECK ( Y * Y > 0))"); // OK
-        try {
-            sa.execute("CREATE TABLE C(X INT, Y INT CONSTRAINT XX CHECK ( X * Y > 0))"); // FAIL
-            //TODO. reflect in the documentation then we do not support these contraints
-            Assert.fail();
-        } catch (SQLException e) {
+        sa.execute("CREATE TABLE A(X INT, Y INT, CONSTRAINT XX1 CHECK ( X * Y > 0))"); // OK
+        sa.execute("CREATE TABLE B(X INT, Y INT CONSTRAINT XX2 CHECK ( Y * Y > 0))"); // OK
+        if (Constants.BUILD_ID < 201) {
+            try {
+                sa.execute("CREATE TABLE C(X INT, Y INT CONSTRAINT XX CHECK ( X * Y > 0))"); // FAIL
+                //TODO. reflect in the documentation then we do not support these constraints
+                Assert.fail();
+            } catch (SQLException e) {
+            }
+        } else {
+            sa.execute("CREATE TABLE C(X INT, Y INT CONSTRAINT XX CHECK ( X * Y > 0))");
         }
         sa.execute("DROP TABLE A");
         sa.execute("DROP TABLE B");

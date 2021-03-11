@@ -2,6 +2,7 @@ package com.dullesopen.h2test.features;
 
 import com.dullesopen.h2test.TestConfig;
 import com.dullesopen.h2test.Utils;
+import org.h2.engine.Constants;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -51,8 +52,10 @@ public class SizeTest {
 
         ResultSet rs = sa.executeQuery("SELECT COUNT(C) AS X , Y FROM one GROUP BY Y;");
         ResultSetMetaData md = rs.getMetaData();
-        assertEquals(md.getPrecision(1), 19);
-        assertEquals(md.getPrecision(2), 10);
+        //noinspection ConstantConditions
+        assertEquals(md.getPrecision(1), Constants.BUILD_ID > 200 ? 64 : 19);
+        //noinspection ConstantConditions
+        assertEquals(md.getPrecision(2), Constants.BUILD_ID > 200 ? 32 : 10);
     }
 
     @Test
@@ -68,17 +71,23 @@ public class SizeTest {
             ResultSet rs = sa.executeQuery("SELECT * FROM ONE;");
             ResultSetMetaData md = rs.getMetaData();
             assertEquals(md.getPrecision(1), 12);
-            assertEquals(md.getPrecision(2), 17);
-            assertEquals(md.getColumnType(1), Types.DECIMAL);
-            assertEquals(md.getColumnType(2), Types.DOUBLE);
+            //noinspection ConstantConditions
+            assertEquals(md.getPrecision(2), Constants.BUILD_ID > 200 ? 53 : 17);
+            //noinspection ConstantConditions
+            assertEquals(md.getColumnType(1), Constants.BUILD_ID > 200 ? Types.NUMERIC : Types.DECIMAL);
+            //noinspection ConstantConditions
+            assertEquals(md.getColumnType(2), Constants.BUILD_ID > 200 ? Types.FLOAT : Types.DOUBLE);
         }
         {
             ResultSet rs = sa.executeQuery("SELECT * FROM TWO;");
             ResultSetMetaData md = rs.getMetaData();
             assertEquals(md.getPrecision(1), 12); //WRONG SIZE
-            assertEquals(md.getPrecision(2), 17);
-            assertEquals(md.getColumnType(1), Types.DECIMAL);
-            assertEquals(md.getColumnType(2), Types.DOUBLE);
+            //noinspection ConstantConditions
+            assertEquals(md.getPrecision(2), Constants.BUILD_ID > 200 ? 53 : 17);
+            //noinspection ConstantConditions
+            assertEquals(md.getColumnType(1), Constants.BUILD_ID > 200 ? Types.NUMERIC : Types.DECIMAL);
+            //noinspection ConstantConditions
+            assertEquals(md.getColumnType(2), Constants.BUILD_ID > 200 ? Types.FLOAT : Types.DOUBLE);
         }
         ca.close();
     }
@@ -141,7 +150,7 @@ public class SizeTest {
 
         ResultSet rs = sa.executeQuery("SELECT UPPER (C), CHAR(10), CONCAT(C,C,C), HEXTORAW(C), RAWTOHEX(C) FROM one;");
         ResultSetMetaData md = rs.getMetaData();
-        assertEquals(md.getPrecision(1), 12);
+        assertEquals(md.getPrecision(1), Constants.BUILD_ID > 200 ? 1048576 : 12);
         assertEquals(md.getPrecision(2), 1);
         assertEquals(md.getPrecision(3), 36);
         assertEquals(md.getPrecision(4), 3);
@@ -158,7 +167,7 @@ public class SizeTest {
         stat.execute("INSERT INTO TEST VALUES(1)");
 
         ResultSetMetaData meta = stat.executeQuery("select abs(X) FROM TEST").getMetaData();
-        assertEquals(10, meta.getPrecision(1));
+        assertEquals(meta.getPrecision(1), Constants.BUILD_ID > 200 ? 32 : 10);
 
         stat.execute("DROP TABLE TEST");
     }
@@ -186,7 +195,7 @@ public class SizeTest {
         checkPrecision(9, "SELECT SUBSTR(NAME, 2) FROM TEST", stat);
         checkPrecision(10, "SELECT SUBSTR(NAME, ID) FROM TEST", stat);
         checkPrecision(4, "SELECT SUBSTR(NAME, 2, 4) FROM TEST", stat);
-        checkPrecision(0, "SELECT SUBSTR(NAME, 12, 4) FROM TEST", stat);
+        checkPrecision(Constants.BUILD_ID > 200 ? 1 : 0, "SELECT SUBSTR(NAME, 12, 4) FROM TEST", stat);
         checkPrecision(3, "SELECT SUBSTR(NAME, 8, 4) FROM TEST", stat);
         checkPrecision(4, "SELECT SUBSTR(NAME, 7, 4) FROM TEST", stat);
         checkPrecision(8, "SELECT SUBSTR(NAME, 3, ID*0) FROM TEST", stat);
@@ -285,9 +294,12 @@ public class SizeTest {
         ResultSet rs = sa.executeQuery("SELECT C, D, D, DT FROM one;");
         ResultSetMetaData md = rs.getMetaData();
         assertEquals(md.getPrecision(1), 12);
-        assertEquals(md.getPrecision(2), 8);
-        assertEquals(md.getPrecision(3), 8);
-        assertEquals(md.getPrecision(4), 23);
+        //noinspection ConstantConditions
+        assertEquals(md.getPrecision(2), Constants.BUILD_ID > 200 ? 10 : 8);
+        //noinspection ConstantConditions
+        assertEquals(md.getPrecision(3), Constants.BUILD_ID > 200 ? 10 : 8);
+        //noinspection ConstantConditions
+        assertEquals(md.getPrecision(4), Constants.BUILD_ID > 200 ? 26 : 23);
     }
 
     @Test(groups = {"db2"})

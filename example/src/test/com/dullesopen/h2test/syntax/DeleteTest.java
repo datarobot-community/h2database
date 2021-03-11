@@ -2,6 +2,7 @@ package com.dullesopen.h2test.syntax;
 
 import com.dullesopen.h2test.Utils;
 import org.h2.api.ErrorCode;
+import org.h2.engine.Constants;
 import org.h2.store.fs.FileUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
@@ -53,8 +54,14 @@ public class DeleteTest {
             statement.execute("SELECT * FROM B");
             Assert.fail("did not drop");
         } catch (SQLException e) {
-            Assert.assertEquals(e.getErrorCode(), ErrorCode.TABLE_OR_VIEW_NOT_FOUND_1);
-            assertEquals(Utils.truncate(e), "Table \"B\" not found");
+            //noinspection ConstantConditions
+            Assert.assertEquals(e.getErrorCode(),
+                    Constants.BUILD_ID < 201 ? ErrorCode.TABLE_OR_VIEW_NOT_FOUND_1 : 42104);
+            //noinspection ConstantConditions
+            assertEquals(Utils.truncate(e),
+                    Constants.BUILD_ID < 201 ?
+                            "Table \"B\" not found" :
+                            "Table \"B\" not found (this database is empty)");
         }
         cb.close();
     }

@@ -133,8 +133,9 @@ public class CreateTest {
             fail("distinct is illegal here");
         } catch (SQLException e) {
             assertEquals(e.getErrorCode(), ErrorCode.SYNTAX_ERROR_2);
-            assertEquals(Utils.truncate(e),
-                    "Syntax error in SQL statement \"CREATE TABLE B(VAR CHAR(6) DISTINCT[*])\"; expected \"FOR, UNSIGNED, INVISIBLE, VISIBLE, NOT, NULL, AS, DEFAULT, GENERATED, NOT, NULL, AUTO_INCREMENT, BIGSERIAL, SERIAL, IDENTITY, NULL_TO_DEFAULT, SEQUENCE, SELECTIVITY, COMMENT, EXTENSION, CONSTRAINT, PRIMARY, UNIQUE, NOT, NULL, CHECK, REFERENCES, ,, )\"");
+            //noinspection ConstantConditions
+            assertEquals(Utils.truncate(e).substring(0, 81),
+                    "Syntax error in SQL statement \"CREATE TABLE B(VAR CHAR(6) DISTINCT[*])\"; expected");
         }
     }
 
@@ -157,8 +158,8 @@ public class CreateTest {
             sa.executeQuery(sql);
             Assert.fail();
         } catch (SQLException e) {
-            Assert.assertEquals(e.getErrorCode(),ErrorCode.COLUMN_NOT_FOUND_1);
-            Assert.assertEquals(Utils.truncate(e),"Column \"MOVIES.TITLE\" not found");
+            Assert.assertEquals(e.getErrorCode(), ErrorCode.COLUMN_NOT_FOUND_1);
+            Assert.assertEquals(Utils.truncate(e), "Column \"MOVIES.TITLE\" not found");
         }
     }
 

@@ -62,7 +62,7 @@ public class OrderByTest {
     @Test
     public void oracle() throws Exception {
         if (TestConfig.ORACLE) {
-            Connection linked =TestConfig.getOracleConnection();
+            Connection linked = TestConfig.getOracleConnection();
             info("Oracle", linked, "order by 1 , 2", "", "");
         }
     }

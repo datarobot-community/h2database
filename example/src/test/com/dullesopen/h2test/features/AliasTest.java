@@ -3,18 +3,15 @@ package com.dullesopen.h2test.features;
 
 import com.dullesopen.h2test.Utils;
 import org.h2.api.ErrorCode;
-import org.h2.engine.SysProperties;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 
 import java.sql.*;
 import java.text.MessageFormat;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
 
 public class AliasTest {
 // ------------------------------ FIELDS ------------------------------

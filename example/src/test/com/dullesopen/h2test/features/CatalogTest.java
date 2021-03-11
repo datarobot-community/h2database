@@ -31,7 +31,7 @@ public class CatalogTest {
         Class.forName("org.h2.Driver");
         Properties info = new Properties();
         info.put("CATALOG", "MYCAT");
-        h2 = DriverManager.getConnection("jdbc:h2:file:target/temp", info);
+        h2 = DriverManager.getConnection("jdbc:h2:mem:", info);
     }
 
     @AfterMethod

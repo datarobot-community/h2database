@@ -1,6 +1,7 @@
 package com.dullesopen.h2test.syntax;
 
 import com.dullesopen.h2test.Utils;
+import org.h2.engine.Constants;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -68,8 +69,11 @@ public class SelectTest {
             fail();
         } catch (SQLException e) {
             Assert.assertEquals(e.getErrorCode(), 42001);
+            //noinspection ConstantConditions
             Assert.assertEquals(Utils.truncate(e),
-                    "Syntax error in SQL statement \"SELECT UNIQUE[*] COUNT(*) FROM A \"; expected \"TOP, LIMIT, DISTINCT, ALL, *, NOT, EXISTS, INTERSECTS, SELECT, FROM, WITH\"");
+                    Constants.BUILD_ID < 201 ?
+                            "Syntax error in SQL statement \"SELECT UNIQUE[*] COUNT(*) FROM A \"; expected \"TOP, LIMIT, DISTINCT, ALL, *, NOT, EXISTS, INTERSECTS, SELECT, FROM, WITH\"" :
+                            "Syntax error in SQL statement \"SELECT UNIQUE COUNT[*](*) FROM A\"; expected \"(\"");
         }
     }
 }

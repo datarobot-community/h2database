@@ -3,6 +3,7 @@ package com.dullesopen.h2test.syntax;
 import com.dullesopen.h2test.TestConfig;
 import com.dullesopen.h2test.Utils;
 import org.h2.api.ErrorCode;
+import org.h2.engine.Constants;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -107,13 +108,18 @@ public class Union {
 
     @Test
     public void unboundConstraintH2() throws Exception {
-        Statement statement = h2.createStatement();
-        try {
-            statement.execute("CREATE TABLE A(X INT CHECK (X>0 AND Y<1), Y INT)");
-            Assert.fail("Surprise: unbound constrain is supported by H2?");
-        } catch (SQLException e) {
-            Assert.assertEquals(e.getErrorCode(), ErrorCode.COLUMN_NOT_FOUND_1);
-            Assert.assertEquals(Utils.truncate(e), "Column \"Y\" not found");
+        try (Statement statement = h2.createStatement()) {
+            if (Constants.BUILD_ID < 201) {
+                try {
+                    statement.execute("CREATE TABLE A(X INT CHECK (X>0 AND Y<1), Y INT)");
+                    Assert.fail("Surprise: unbound constrain is supported by H2?");
+                } catch (SQLException e) {
+                    Assert.assertEquals(e.getErrorCode(), ErrorCode.COLUMN_NOT_FOUND_1);
+                    Assert.assertEquals(Utils.truncate(e), "Column \"Y\" not found");
+                }
+            } else {
+                statement.execute("CREATE TABLE A(X INT CHECK (X>0 AND Y<1), Y INT)");
+            }
         }
     }
 

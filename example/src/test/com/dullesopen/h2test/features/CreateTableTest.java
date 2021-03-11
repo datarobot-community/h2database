@@ -1,14 +1,14 @@
 package com.dullesopen.h2test.features;
 
-import org.h2.engine.SysProperties;
 import org.h2.jdbc.JdbcResultSetMetaData;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
 
 public class CreateTableTest {
 // ------------------------------ FIELDS ------------------------------
@@ -35,6 +35,6 @@ public class CreateTableTest {
         Statement stat = h2.createStatement();
         stat.execute("CREATE TABLE FOO (A INTEGER extension 'foo')");
         JdbcResultSetMetaData rs = stat.executeQuery("SELECT * FROM FOO").getMetaData().unwrap(JdbcResultSetMetaData.class);
-        Assert.assertEquals(rs.getExtension(1),"foo");
+        Assert.assertEquals(rs.getExtension(1), "foo");
     }
 }

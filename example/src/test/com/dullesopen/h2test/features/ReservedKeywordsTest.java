@@ -37,8 +37,8 @@ public class ReservedKeywordsTest {
     @Test
     public void reserved() throws Exception {
         java.sql.Statement statement = connection.createStatement();
-        statement.execute("CREATE TABLE \"ALL\" (x INTEGER, )");
-        statement.execute("CREATE TABLE \"TOP\" (x INTEGER, )");
+        statement.execute("CREATE TABLE \"ALL\" (x INTEGER )");
+        statement.execute("CREATE TABLE \"TOP\" (x INTEGER )");
         connection.commit();
         String sql = "select {0}.x from {0} inner join (select {0}.x from {0}) AS B on {0}.x = B.x";
         statement.execute(MessageFormat.format(sql, "\"ALL\""));

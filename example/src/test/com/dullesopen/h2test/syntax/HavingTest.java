@@ -10,8 +10,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
+ *
  */
-public class Having {
+public class HavingTest {
 
     /**
      * this test demonstrates that we can not use alias in having statement

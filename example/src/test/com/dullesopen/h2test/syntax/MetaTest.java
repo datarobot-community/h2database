@@ -81,7 +81,7 @@ public class MetaTest {
     public void oracle() throws Exception {
         if (TestConfig.ORACLE) {
 
-            Connection linked =TestConfig.getOracleConnection();
+            Connection linked = TestConfig.getOracleConnection();
             info("Oracle", linked);
         }
     }

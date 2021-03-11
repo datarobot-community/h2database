@@ -22,7 +22,7 @@ public class CarolinaModeTest {
     @BeforeMethod
     protected void setUp() throws Exception {
         Class.forName("org.h2.Driver");
-        h2 = DriverManager.getConnection("jdbc:h2:mem:;MODE=Carolina");
+        h2 = DriverManager.getConnection("jdbc:h2:mem:;mode=Oracle");
 
         Statement stat = h2.createStatement();
         stat.execute("CREATE TABLE ONE ( X INTEGER)");
@@ -37,39 +37,6 @@ public class CarolinaModeTest {
     }
 
 // -------------------------- OTHER METHODS --------------------------
-
-    @Test
-    public void invert() throws Exception {
-
-        {
-            Statement stat = h2.createStatement();
-            ResultSet rs = stat.executeQuery("SELECT X FROM ONE WHERE X not in (NULL,456)");
-            rs.next();
-            Assert.assertEquals(rs.getInt(1), 123);
-            Assert.assertFalse(rs.next());
-            stat.close();
-        }
-        {
-            Statement stat = h2.createStatement();
-            ResultSet rs = stat.executeQuery("SELECT X FROM ONE WHERE X in (NULL,456)");
-            Assert.assertFalse(rs.next());
-            stat.close();
-        }
-        {
-            Statement stat = h2.createStatement();
-            ResultSet rs = stat.executeQuery("SELECT X FROM ONE WHERE null in (NULL,456)");
-            rs.next();
-            Assert.assertEquals(rs.getInt(1), 123);
-            Assert.assertFalse(rs.next());
-            stat.close();
-        }
-        {
-            Statement stat = h2.createStatement();
-            ResultSet rs = stat.executeQuery("SELECT X FROM ONE WHERE null not in (NULL,456)");
-            Assert.assertFalse(rs.next());
-            stat.close();
-        }
-    }
 
     @Test
     public void concat() throws Exception {

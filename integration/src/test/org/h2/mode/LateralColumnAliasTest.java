@@ -1,8 +1,7 @@
-package org.h2.contrib.lateral;
+package org.h2.mode;
 
 import org.h2.api.ErrorCode;
 import org.h2.contrib.test.Utils;
-import org.h2.store.fs.FileUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -10,8 +9,13 @@ import org.testng.annotations.Test;
 
 import java.sql.*;
 
+/**
+ * https://bitbucket.org/dullesresearch/h2database/issues/3/lateral-column-alias
+ * <p>
+ * Mode.lateralColumnAlias
+ */
 
-public class LateralAliasTest {
+public class LateralColumnAliasTest {
 // ------------------------------ FIELDS ------------------------------
 
     private Connection h2;
@@ -21,8 +25,7 @@ public class LateralAliasTest {
     @BeforeMethod
     protected void setUp() throws Exception {
         Class.forName("org.h2.Driver");
-        FileUtils.deleteRecursive("./target/db", false);
-        h2 = DriverManager.getConnection("jdbc:h2:./target/db/calculated;MODE=Carolina");
+        h2 = DriverManager.getConnection("jdbc:h2:mem:;MODE=Carolina");
     }
 
     @AfterMethod

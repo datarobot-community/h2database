@@ -1,4 +1,4 @@
-package com.dullesopen.h2test.features;
+package org.h2.mode;
 
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
@@ -8,10 +8,10 @@ import org.testng.annotations.Test;
 import java.sql.*;
 
 /**
- * Automatically remove duplicate column from H2 database
+ * Mode.removeDuplicateNamesOnCreateTableAs
  */
 
-public class DuplicateColumnTest {
+public class RemoveDuplicateNamesOnCreateTableAsTest {
     // -------------------------- TEST METHODS --------------------------
     private Connection h2;
 

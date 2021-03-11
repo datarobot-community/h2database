@@ -2145,7 +2145,7 @@ public class Parser {
             ArrayList<GroupBy> list = New.arrayList();
             do {
                 Expression expr = readExpression();
-                if (database.getMode().groupByInteger && expr instanceof ValueExpression &&
+                if (database.getMode().groupByColumnNumber && expr instanceof ValueExpression &&
                         expr.getType() == Value.INT) {
                     int index = expr.getValue(null).getInt();
                     list.add(new GroupBy(index));
@@ -2896,7 +2896,7 @@ public class Parser {
             }
             break;
         case IDENTIFIER:
-            if (database.getMode().calculatedAlias && readIf("CALCULATED")) {
+            if (database.getMode().lateralColumnAlias && readIf("CALCULATED")) {
                 r = new LateralAlias(currentToken);
                 read();
                 break;

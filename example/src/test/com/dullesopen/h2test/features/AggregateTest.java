@@ -24,7 +24,7 @@ public class AggregateTest {
     @BeforeMethod
     protected void setUp() throws Exception {
         Class.forName("org.h2.Driver");
-        h2 = DriverManager.getConnection("jdbc:h2:mem:;mode=Carolina");
+        h2 = DriverManager.getConnection("jdbc:h2:mem:");
     }
 
     @AfterMethod
@@ -63,31 +63,6 @@ public class AggregateTest {
                 Assert.assertEquals(e.getErrorCode(), code);
                 Assert.assertEquals(Utils.truncate(e), "SUM or AVG on wrong data type for \"AVG(B)\"");
             }
-        }
-    }
-
-    @Test
-    public void sumWithMissing() throws Exception {
-        Statement statement = h2.createStatement();
-        statement.execute("DROP TABLE FOO IF EXISTS");
-        statement.execute("CREATE TABLE FOO (X DOUBLE PRECISION)");
-        statement.execute("insert into FOO values(0.0)");
-        statement.execute("insert into FOO values(1.0)");
-        statement.execute("insert into FOO values(2.718281828459045235)");
-        {
-            ResultSet rs = statement.executeQuery("select sum(log(X)) from FOO");
-            rs.next();
-            Assert.assertEquals(rs.getDouble(1), 1.0);
-        }
-        {
-            ResultSet rs = statement.executeQuery("select min(log(X)) from FOO");
-            rs.next();
-            Assert.assertEquals(rs.getDouble(1), Double.NEGATIVE_INFINITY);
-        }
-        {
-            ResultSet rs = statement.executeQuery("select max(log(X)) from FOO");
-            rs.next();
-            Assert.assertEquals(rs.getDouble(1), 1.0);
         }
     }
 

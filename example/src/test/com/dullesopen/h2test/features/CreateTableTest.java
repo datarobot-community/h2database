@@ -20,7 +20,7 @@ public class CreateTableTest {
     @BeforeMethod
     protected void setUp() throws Exception {
         Class.forName("org.h2.Driver");
-        h2 = DriverManager.getConnection("jdbc:h2:mem:;MODE=Carolina");
+        h2 = DriverManager.getConnection("jdbc:h2:mem:");
     }
 
     @AfterMethod
@@ -29,20 +29,6 @@ public class CreateTableTest {
     }
 
 // -------------------------- OTHER METHODS --------------------------
-
-    @Test
-    public void create() throws Exception {
-
-        Statement stat = h2.createStatement();
-
-        stat.execute("CREATE TABLE FOO (A INTEGER)");
-        stat.execute("INSERT INTO FOO VALUES(10)");
-        stat.execute("INSERT INTO FOO VALUES(20)");
-        stat.execute("INSERT INTO FOO VALUES(30)");
-
-        stat.execute("CREATE TABLE BAR AS SELECT * FROM FOO");
-        Assert.assertEquals(stat.getUpdateCount(), 3);
-    }
 
     @Test
     public void extension() throws Exception {

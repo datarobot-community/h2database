@@ -166,34 +166,9 @@ public class Mode {
     public boolean spaceIsNull;
 
     /**
-     * Use column alias in expression if prefixed by CALCULATED keyword
+     * Skip over NaN and Infinite for aggregate calculations
      */
-    public boolean calculatedAlias;
-
-    /**
-     * Silently truncate string value if it does ot fit into target
-     */
-    public boolean truncateStringValue;
-
-    /**
-     * Allow to use GROUP BY n, where n is column index in the SELECT list, similar to ORDER BY
-     */
-    public boolean groupByInteger;
-
-    /**
-     * Cast explicitly specified decimal constants to ValueDouble
-     */
-    public boolean decimalConstantAsDouble;
-
-    /**
-     * use update count in non ANSI mode, returns non zero value in case of SELECT operations
-     */
-    public boolean updateCountOnCreateTable;
-
-    /**
-     * Integer numbers are divided as doubles
-     */
-    public boolean nonIntegerDivision;
+    public boolean aggregateIgnoreNanInfinite;
 
     /**
      * Division 0/0 result in NULL
@@ -206,7 +181,13 @@ public class Mode {
     public Integer concatReturnSize;
 
     /**
-     * Non NULL semantic for null comparison, treats two nulls as equal.
+     * Cast explicitly specified decimal constants to ValueDouble
+     */
+    public boolean decimalConstantAsDouble;
+
+    /**
+     * Disable three-valued logic for comparison operations with null,
+     * treats two nulls as equal.
      * <p>
      * not compatible with ANSI
      */
@@ -217,16 +198,24 @@ public class Mode {
      * For user defined function:
      * Input argument: pass NULL as Double.NaN and Float.NaN for double and float
      * Return value: convert Double.NaN to NULL.
-     * <p>
-     * not compatible with ANSI
      */
 
     public boolean doubleNanSameAsNull;
 
     /**
-     * Skip over NaN and Infinite for aggregate calculations
+     * Allow to use GROUP BY n, where n is column index in the SELECT list, similar to ORDER BY
      */
-    public boolean aggregateIgnoreNanInfinite;
+    public boolean groupByColumnNumber;
+
+    /**
+     * Allow lateral column alias in expression if prefixed by CALCULATED keyword
+     */
+    public boolean lateralColumnAlias;
+
+    /**
+     * Integer numbers are divided as doubles
+     */
+    public boolean nonIntegerDivision;
 
     /**
      * Remove duplicate column names from the resulting table
@@ -235,6 +224,15 @@ public class Mode {
      */
     public boolean removeDuplicateNamesOnCreateTableAs;
 
+    /**
+     * Silently truncate string value if it does ot fit into target
+     */
+    public boolean truncateStringValue;
+
+    /**
+     * use update count in non ANSI mode, returns non zero value in case of SELECT operations
+     */
+    public boolean updateCountOnCreateTable;
 
     private final String name;
 
@@ -344,18 +342,19 @@ public class Mode {
         mode.nullConcatIsNull = false;
         mode.treatEmptyStringsAsNull = true;
         mode.spaceIsNull = true;
-        mode.calculatedAlias = true;
-        mode.truncateStringValue = true;
-        mode.groupByInteger = true;
-        mode.decimalConstantAsDouble = true;
-        mode.updateCountOnCreateTable = true;
-        mode.nonIntegerDivision = true;
+        // below are carolina specific modes
+        mode.aggregateIgnoreNanInfinite = true;
         mode.allowZeroDivide = true;
         mode.concatReturnSize = 200;
+        mode.decimalConstantAsDouble = true;
         mode.disableThreeValuedLogic = true;
         mode.doubleNanSameAsNull = true;
-        mode.aggregateIgnoreNanInfinite = true;
+        mode.groupByColumnNumber = true;
+        mode.lateralColumnAlias = true;
+        mode.nonIntegerDivision = true;
         mode.removeDuplicateNamesOnCreateTableAs = true;
+        mode.truncateStringValue = true;
+        mode.updateCountOnCreateTable = true;
         add(mode);
     }
 

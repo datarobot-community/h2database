@@ -1,4 +1,4 @@
-package com.dullesopen.h2test.features;
+package org.h2.mode;
 
 
 import org.testng.Assert;
@@ -8,7 +8,11 @@ import org.testng.annotations.Test;
 
 import java.sql.*;
 
-public class InTest {
+/**
+ * Mode.disableThreeValueLogic
+ */
+
+public class DisableThreeValuedLogicInTest {
 // ------------------------------ FIELDS ------------------------------
 
     private Connection h2;
@@ -34,6 +38,7 @@ public class InTest {
 
             stat.execute("INSERT INTO  SUB VALUES('abc')");
             stat.execute("INSERT INTO  SUB VALUES(null)");
+
         }
 
     }
@@ -44,6 +49,40 @@ public class InTest {
     }
 
 // -------------------------- OTHER METHODS --------------------------
+
+    @Test
+    public void invert() throws Exception {
+
+        {
+            Statement stat = h2.createStatement();
+            ResultSet rs = stat.executeQuery("SELECT abc FROM ONE WHERE abc not in (NULL,456)");
+            rs.next();
+            Assert.assertEquals(rs.getInt(1), 123);
+            Assert.assertFalse(rs.next());
+            stat.close();
+        }
+        {
+            Statement stat = h2.createStatement();
+            ResultSet rs = stat.executeQuery("SELECT abc FROM ONE WHERE abc in (NULL,456)");
+            Assert.assertFalse(rs.next());
+            stat.close();
+        }
+        {
+            Statement stat = h2.createStatement();
+            ResultSet rs = stat.executeQuery("SELECT abc FROM ONE WHERE null in (NULL,456)");
+            rs.next();
+            Assert.assertEquals(rs.getInt(1), 123);
+            Assert.assertFalse(rs.next());
+            stat.close();
+        }
+        {
+            Statement stat = h2.createStatement();
+            ResultSet rs = stat.executeQuery("SELECT abc FROM ONE WHERE null not in (NULL,456)");
+            Assert.assertFalse(rs.next());
+            stat.close();
+        }
+    }
+
 
     @Test
     public void numeric() throws Exception {

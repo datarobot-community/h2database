@@ -24,7 +24,7 @@ public class GroupByTest {
     protected void setUp() throws Exception {
         Class.forName("org.h2.Driver");
         FileUtils.deleteRecursive("./target/db", false);
-        h2 = DriverManager.getConnection("jdbc:h2:./target/db/order;MODE=Carolina");
+        h2 = DriverManager.getConnection("jdbc:h2:./target/db/order");
 
         Statement stat = h2.createStatement();
         stat.execute("CREATE TABLE ONE ( X INTEGER, Y INTEGER, Z INTEGER)");

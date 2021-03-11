@@ -1,4 +1,4 @@
-package org.h2.contrib.misc;
+package org.h2.mode;
 
 import org.h2.api.ErrorCode;
 import org.h2.contrib.test.Utils;
@@ -11,6 +11,8 @@ import java.sql.*;
 
 /**
  * https://bitbucket.org/dullesresearch/h2database/issues/7/group-by-column-number
+ * <p>
+ * Mode.doubleNanSameAsNullTest
  */
 
 public class GroupByColumnNumberTest {

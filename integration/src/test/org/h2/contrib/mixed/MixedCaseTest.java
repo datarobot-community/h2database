@@ -1,27 +1,17 @@
-package com.dullesopen.h2test.features;
+package org.h2.contrib.mixed;
 
+import org.h2.contrib.test.Utils;
 import org.h2.store.fs.FileUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 
 public class MixedCaseTest {
-// ------------------------------ FIELDS ------------------------------
 
     private Connection h2;
-
-// -------------------------- TEST METHODS --------------------------
-
-    @BeforeSuite
-    protected void beforeSuite() throws Exception {
-    }
 
     @BeforeMethod
     protected void setUp() throws Exception {
@@ -147,6 +137,28 @@ public class MixedCaseTest {
                     "  (select * from one outer union select * from one)");
             ResultSet rs = stat.executeQuery("SELECT * FROM TWO");
             Assert.assertEquals(rs.getMetaData().getColumnName(1), "xYz");
+        }
+    }
+
+    @Test
+    public void useTableInsteadOfAlias() throws Exception {
+        try (Connection h2 = DriverManager.getConnection("jdbc:h2:mem:;MIXED_CASE=true")) {
+            try (Statement stat = h2.createStatement()) {
+                Statement statement = h2.createStatement();
+                statement.execute("CREATE TABLE foo(a CHAR(6))");
+                statement.execute("INSERT INTO foo values('abcdef')");
+
+                String sql = "select foo.a from foo as f";
+                ResultSet rs = null;
+                try {
+                    statement.executeQuery(sql);
+                    Assert.fail();
+                } catch (SQLException e) {
+                    Assert.assertEquals(e.getErrorCode(), 42122);
+                    Assert.assertEquals(Utils.truncate(e), "Column \"FOO.A\" not found");
+                }
+                statement.close();
+            }
         }
     }
 }

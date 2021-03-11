@@ -587,13 +587,6 @@ public class SysProperties {
 
 
     /**
-     * Remove duplicate column names from the resulting table
-     * <p>
-     * not compatible with ANSI
-     */
-    public static final boolean REMOVE_DUPLICATE_NAME_ON_CREATE_TABLE_AS = Utils.getProperty("h2.removeDuplicateNameOnCreateTableAs", false);
-
-    /**
      * System property <code>h2.disableGeometry</code> (default: false).<br />
      * disable attempt to try to load Geometry class saving on one DBException while debugging
      */

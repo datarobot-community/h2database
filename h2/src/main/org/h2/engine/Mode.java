@@ -228,6 +228,14 @@ public class Mode {
      */
     public boolean aggregateIgnoreNanInfinite;
 
+    /**
+     * Remove duplicate column names from the resulting table
+     * <p>
+     * not compatible with ANSI
+     */
+    public boolean removeDuplicateNamesOnCreateTableAs;
+
+
     private final String name;
 
     static {
@@ -347,6 +355,7 @@ public class Mode {
         mode.disableThreeValuedLogic = true;
         mode.doubleNanSameAsNull = true;
         mode.aggregateIgnoreNanInfinite = true;
+        mode.removeDuplicateNamesOnCreateTableAs = true;
         add(mode);
     }
 

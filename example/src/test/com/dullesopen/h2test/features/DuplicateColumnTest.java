@@ -1,10 +1,8 @@
 package com.dullesopen.h2test.features;
 
-import org.h2.engine.SysProperties;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 
 import java.sql.*;
@@ -17,16 +15,10 @@ public class DuplicateColumnTest {
     // -------------------------- TEST METHODS --------------------------
     private Connection h2;
 
-    @BeforeSuite
-    static public void beforeSuite() {
-        System.getProperties().put("h2.removeDuplicateNameOnCreateTableAs", "true");
-    }
-
     @BeforeMethod
     protected void setUp() throws Exception {
         Class.forName("org.h2.Driver");
-        h2 = DriverManager.getConnection("jdbc:h2:mem:");
-        Assert.assertTrue(SysProperties.REMOVE_DUPLICATE_NAME_ON_CREATE_TABLE_AS);
+        h2 = DriverManager.getConnection("jdbc:h2:mem:;mode=Carolina");
     }
 
     @AfterMethod
@@ -39,7 +31,7 @@ public class DuplicateColumnTest {
     @Test
     public void decrement() throws Exception {
         Class.forName("org.h2.Driver");
-        Connection ca = DriverManager.getConnection("jdbc:h2:mem:d");
+        Connection ca = DriverManager.getConnection("jdbc:h2:mem:d;mode=Carolina");
 
         Statement sa = ca.createStatement();
         sa.execute("CREATE TABLE F(I INTEGER, X INTEGER)");
@@ -55,8 +47,6 @@ public class DuplicateColumnTest {
 
     /**
      * this test demonstrates that we can not use alias in having statement
-     *
-     * @throws Exception
      */
 
     @Test
@@ -113,8 +103,6 @@ public class DuplicateColumnTest {
 
     /**
      * do not remove duplicate names on explicit column specification
-     *
-     * @throws Exception
      */
     @Test
     public void explicit() throws Exception {

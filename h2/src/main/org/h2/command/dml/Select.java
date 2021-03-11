@@ -748,7 +748,7 @@ public class Select extends Query {
             expressionSQL = null;
         }
 
-        if (removeDuplicateColumns && SysProperties.REMOVE_DUPLICATE_NAME_ON_CREATE_TABLE_AS) {
+        if (removeDuplicateColumns && session.getDatabase().getMode().removeDuplicateNamesOnCreateTableAs) {
             removeDuplicateColumns();
             visibleColumnCount = expressions.size();
         }

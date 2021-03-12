@@ -220,7 +220,7 @@ public class Database implements DataHandler {
         this.filePasswordHash = ci.getFilePasswordHash();
         this.fileEncryptionKey = ci.getFileEncryptionKey();
         this.databaseName = name;
-        this.databaseShortName = ci.getCatalog() == null ? parseDatabaseShortName() : ci.getCatalog();
+        this.databaseShortName = parseDatabaseShortName();
         this.maxLengthInplaceLob = Constants.DEFAULT_MAX_LENGTH_INPLACE_LOB;
         this.cipher = cipher;
         String lockMethodName = ci.getProperty("FILE_LOCK", null);

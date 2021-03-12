@@ -47,7 +47,6 @@ public class ConnectionInfo implements Cloneable {
     private boolean ssl;
     private boolean persistent;
     private boolean unnamed;
-    private String catalog;
 
     /**
      * Create a connection info object.
@@ -80,7 +79,6 @@ public class ConnectionInfo implements Cloneable {
         convertPasswords();
         name = url.substring(Constants.START_URL.length());
         parseName();
-        catalog = (String) info.remove("CATALOG");
         String recoverTest = removeProperty("RECOVER_TEST", null);
         if (recoverTest != null) {
             FilePathRec.register();
@@ -675,7 +673,4 @@ public class ConnectionInfo implements Cloneable {
         return url;
     }
 
-    public String getCatalog() {
-        return catalog;
-    }
 }

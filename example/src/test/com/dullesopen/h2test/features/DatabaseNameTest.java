@@ -13,7 +13,7 @@ import java.util.Properties;
 
 import static org.testng.Assert.assertEquals;
 
-public class CatalogTest {
+public class DatabaseNameTest {
 // ------------------------------ FIELDS ------------------------------
 
     private Connection h2;
@@ -29,9 +29,7 @@ public class CatalogTest {
     protected void setUp() throws Exception {
 
         Class.forName("org.h2.Driver");
-        Properties info = new Properties();
-        info.put("CATALOG", "MYCAT");
-        h2 = DriverManager.getConnection("jdbc:h2:mem:", info);
+        h2 = DriverManager.getConnection("jdbc:h2:mem:myname");
     }
 
     @AfterMethod
@@ -48,7 +46,7 @@ public class CatalogTest {
         ResultSet rs = h2.getMetaData().getCatalogs();
         rs.next();
         String catalog = rs.getString(1);
-        assertEquals(catalog, "MYCAT");
+        assertEquals(catalog, "MYNAME");
         rs.close();
     }
 }

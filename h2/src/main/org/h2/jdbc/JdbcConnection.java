@@ -2081,7 +2081,7 @@ public class JdbcConnection extends TraceObject implements Connection,
         session.addLinkedIndexResolver(connectionName, indexResolver);
     }
 
-    public void addExternalQueryExecutionReporter(LinkedQueryExecutionReporter reporter) {
+    public void addLinkedQueryExecutionReporter(LinkedQueryExecutionReporter reporter) {
         session.addLinkedQueryExecutionReporter(reporter);
     }
 }

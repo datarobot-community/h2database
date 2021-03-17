@@ -105,7 +105,7 @@ public class LinkedSchemaTest {
 
         h2.addExternalConnection("#one#", rdbm);
         final List<String> messages = new ArrayList<>();
-        h2.addExternalQueryExecutionReporter((action, schema, sql, connection) -> {
+        h2.addLinkedQueryExecutionReporter((action, schema, sql, connection) -> {
             String msg = action + " : " + schema + " : " + sql;
             System.out.println("msg = " + msg);
             messages.add(msg);

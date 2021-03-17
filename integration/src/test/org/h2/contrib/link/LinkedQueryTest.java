@@ -48,7 +48,7 @@ public class LinkedQueryTest {
 
         cb.addExternalConnection("one", ca);
         final List<String> messages = new ArrayList<>();
-        cb.addExternalQueryExecutionReporter((action, schema, sql, connection) -> {
+        cb.addLinkedQueryExecutionReporter((action, schema, sql, connection) -> {
             String msg = action + " : " + schema + " : " + sql;
             System.out.println("msg = " + msg);
             messages.add(msg);

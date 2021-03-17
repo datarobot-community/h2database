@@ -215,7 +215,7 @@ public interface ResultInterface extends AutoCloseable {
      *
      * @return the fetch size
      */
-    String getExtension(int i);
+    String getColumnMetaExtension(int i);
 
     String getColumnLabel(int i);
 }

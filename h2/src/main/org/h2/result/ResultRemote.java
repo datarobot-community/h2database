@@ -287,7 +287,7 @@ public class ResultRemote implements ResultInterface {
         throw DbException.throwInternalError();
     }
 
-    public String getExtension(int i) {
+    public String getColumnMetaExtension(int i) {
         return null;
     }
 

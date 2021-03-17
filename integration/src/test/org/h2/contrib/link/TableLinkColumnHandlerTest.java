@@ -66,7 +66,7 @@ public class TableLinkColumnHandlerTest {
             ResultSet rs = stat.executeQuery("select * FROM TWO");
             JdbcResultSetMetaData metaData = rs.getMetaData().unwrap(JdbcResultSetMetaData.class);
             Assert.assertEquals(metaData.getColumnName(1), "Second");
-            Assert.assertEquals(metaData.getExtension(1), "aBcCdE");
+            Assert.assertEquals(metaData.getColumnMetaExtension(1), "aBcCdE");
         }
         {
             stat.execute("create table three as select one.second as SeCoNd extension 'CdE' from one");
@@ -74,7 +74,7 @@ public class TableLinkColumnHandlerTest {
             ResultSet rs = stat.executeQuery("select * FROM THREE");
             JdbcResultSetMetaData metaData = rs.getMetaData().unwrap(JdbcResultSetMetaData.class);
             Assert.assertEquals(metaData.getColumnName(1), "SeCoNd");
-            Assert.assertEquals(metaData.getExtension(1), "aBcCdE");
+            Assert.assertEquals(metaData.getColumnMetaExtension(1), "aBcCdE");
         }
     }
 
@@ -105,7 +105,7 @@ public class TableLinkColumnHandlerTest {
             try (ResultSet rs = sa.executeQuery("select * FROM TWO")) {
                 JdbcResultSetMetaData metaData = rs.getMetaData().unwrap(JdbcResultSetMetaData.class);
                 Assert.assertEquals("X", metaData.getColumnName(1));
-                Assert.assertEquals("abc", metaData.getExtension(1));
+                Assert.assertEquals("abc", metaData.getColumnMetaExtension(1));
                 rs.next();
                 Assert.assertEquals(rs.getDouble(2), 17507.);
             }
@@ -190,7 +190,7 @@ public class TableLinkColumnHandlerTest {
         ResultSet rs = stat.executeQuery("select * FROM TWO");
         JdbcResultSetMetaData metaData = rs.getMetaData().unwrap(JdbcResultSetMetaData.class);
         Assert.assertEquals(metaData.getColumnName(1), "xx");
-        Assert.assertEquals(metaData.getExtension(1), "AbC");
+        Assert.assertEquals(metaData.getColumnMetaExtension(1), "AbC");
     }
 
     @Test
@@ -202,7 +202,7 @@ public class TableLinkColumnHandlerTest {
             ResultSet rs = stat.executeQuery("select * FROM TWO");
             JdbcResultSetMetaData metaData = rs.getMetaData().unwrap(JdbcResultSetMetaData.class);
             Assert.assertEquals(metaData.getColumnName(1), "xYz");
-            Assert.assertEquals(metaData.getExtension(1), "AbC");
+            Assert.assertEquals(metaData.getColumnMetaExtension(1), "AbC");
         }
         {
             stat.execute("create view three as select * from one");
@@ -210,7 +210,7 @@ public class TableLinkColumnHandlerTest {
             ResultSet rs = stat.executeQuery("select * FROM THREE");
             JdbcResultSetMetaData metaData = rs.getMetaData().unwrap(JdbcResultSetMetaData.class);
             Assert.assertEquals(metaData.getColumnName(1), "xX");
-            Assert.assertEquals(metaData.getExtension(1), "AbC");
+            Assert.assertEquals(metaData.getColumnMetaExtension(1), "AbC");
         }
     }
 
@@ -223,7 +223,7 @@ public class TableLinkColumnHandlerTest {
             ResultSet rs = stat.executeQuery("select * FROM TWO");
             JdbcResultSetMetaData metaData = rs.getMetaData().unwrap(JdbcResultSetMetaData.class);
             Assert.assertEquals(metaData.getColumnName(1), "i");
-            Assert.assertEquals(metaData.getExtension(1), "AbC");
+            Assert.assertEquals(metaData.getColumnMetaExtension(1), "AbC");
         }
         {
             stat.execute("create view three as select * from two");
@@ -231,7 +231,7 @@ public class TableLinkColumnHandlerTest {
             ResultSet rs = stat.executeQuery("select * FROM THREE");
             JdbcResultSetMetaData metaData = rs.getMetaData().unwrap(JdbcResultSetMetaData.class);
             Assert.assertEquals(metaData.getColumnName(1), "i");
-            Assert.assertEquals(metaData.getExtension(1), "AbC");
+            Assert.assertEquals(metaData.getColumnMetaExtension(1), "AbC");
         }
     }
 
@@ -244,7 +244,7 @@ public class TableLinkColumnHandlerTest {
             ResultSet rs = stat.executeQuery("select * FROM TWO");
             JdbcResultSetMetaData metaData = rs.getMetaData().unwrap(JdbcResultSetMetaData.class);
             Assert.assertEquals(metaData.getColumnName(1), "i");
-            Assert.assertEquals(metaData.getExtension(1), "AbC");
+            Assert.assertEquals(metaData.getColumnMetaExtension(1), "AbC");
         }
         {
             stat.execute("create view three as select two.i as ii from two");
@@ -252,7 +252,7 @@ public class TableLinkColumnHandlerTest {
             ResultSet rs = stat.executeQuery("select * FROM THREE");
             JdbcResultSetMetaData metaData = rs.getMetaData().unwrap(JdbcResultSetMetaData.class);
             Assert.assertEquals(metaData.getColumnName(1), "ii");
-            Assert.assertEquals(metaData.getExtension(1), "AbC");
+            Assert.assertEquals(metaData.getColumnMetaExtension(1), "AbC");
         }
     }
 
@@ -264,7 +264,7 @@ public class TableLinkColumnHandlerTest {
         ResultSet rs = stat.executeQuery("select * FROM TWO");
         JdbcResultSetMetaData metaData = rs.getMetaData().unwrap(JdbcResultSetMetaData.class);
         Assert.assertEquals(metaData.getColumnName(1), "x");
-        Assert.assertEquals(metaData.getExtension(1), "AbC");
+        Assert.assertEquals(metaData.getColumnMetaExtension(1), "AbC");
     }
 
     private static class NoDateTableLinkColumnHandler implements TableLinkColumnHandler {
@@ -274,12 +274,12 @@ public class TableLinkColumnHandlerTest {
             switch (sqlType) {
                 case Types.TIMESTAMP: {
                     Column column = new Column(name, Value.DOUBLE, 20, 20, 20);
-                    column.setExtension("date");
+                    column.setMetaExtension("date");
                     return column;
                 }
                 default: {
                     Column column = new Column(name, type, precision, scale, displaySize);
-                    column.setExtension("abc");
+                    column.setMetaExtension("abc");
                     return column;
                 }
             }

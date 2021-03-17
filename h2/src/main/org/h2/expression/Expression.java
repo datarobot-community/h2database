@@ -26,7 +26,7 @@ public abstract class Expression {
 
     private boolean addedToFilter;
 
-    protected String extension;
+    protected String columnMetaExtension;
 
     /**
      * Return the resulting value for the current row.
@@ -357,12 +357,12 @@ public abstract class Expression {
         return null;
     }
 
-    public String getExtension() {
-        return extension;
+    public String getColumnMetaExtension() {
+        return columnMetaExtension;
     }
 
-    public void setExtension(String extension) {
-        this.extension = extension;
+    public void setColumnMetaExtension(String columnMetaExtension) {
+        this.columnMetaExtension = columnMetaExtension;
     }
 
     public String getColumnLabel() {

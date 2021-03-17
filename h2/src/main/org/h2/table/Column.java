@@ -92,7 +92,7 @@ public class Column {
     private boolean primaryKey;
     private boolean visible = true;
 
-    private String extension;
+    private String metaExtension;
 
     public Column(String name, int type) {
         this(name, type, -1, -1, -1, null);
@@ -529,10 +529,10 @@ public class Column {
         if (checkConstraint != null) {
             buff.append(" CHECK ").append(checkConstraintSQL);
         }
-        if (extension != null) {
+        if (metaExtension != null) {
             buff.append(" EXTENSION ");
             buff.append(" ");
-            buff.append(StringUtils.quoteStringSQL(extension));
+            buff.append(StringUtils.quoteStringSQL(metaExtension));
         }
         return buff.toString();
     }
@@ -822,15 +822,15 @@ public class Column {
         primaryKey = source.primaryKey;
         visible = source.visible;
         mixedCaseName = source.mixedCaseName;
-        extension = source.extension;
+        metaExtension = source.metaExtension;
     }
 
-    public void setExtension(String extension) {
-        this.extension = extension;
+    public void setMetaExtension(String metaExtension) {
+        this.metaExtension = metaExtension;
     }
 
-    public String getExtension() {
-        return extension;
+    public String getMetaExtension() {
+        return metaExtension;
     }
 
     public void setMixedCaseName(String mixedCaseName) {

@@ -2089,10 +2089,10 @@ public class Parser {
                     aliasColumnName |= database.getMode().aliasColumnName;
                     Alias a = new Alias(expr, alias, mixed, aliasColumnName);
                     expr = a;
-                    a.setExtension(readExtensionIf());
+                    a.setColumnMetaExtension(readExtensionIf());
                 }
                 else {
-                    expr.setExtension(ex);
+                    expr.setColumnMetaExtension(ex);
                 }
                 expressions.add(expr);
             }
@@ -4149,7 +4149,7 @@ public class Parser {
         if (comment != null) {
             column.setComment(comment);
         }
-        column.setExtension(readExtensionIf());
+        column.setMetaExtension(readExtensionIf());
         column.setMixedCaseName(mixedCaseName);
         return column;
     }

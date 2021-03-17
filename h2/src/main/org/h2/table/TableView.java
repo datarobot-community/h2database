@@ -178,7 +178,7 @@ public class TableView extends Table {
                 int displaySize = expr.getDisplaySize();
                 Column col = new Column(name, type, precision, scale, displaySize);
                 col.setTable(this, i);
-                col.setExtension(expr.getExtension());
+                col.setMetaExtension(expr.getColumnMetaExtension());
                 col.setMixedCaseName(expr.getMixedCaseName());
                 // Fetch check constraint from view column source
                 ExpressionColumn fromColumn = null;

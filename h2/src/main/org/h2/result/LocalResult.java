@@ -554,8 +554,8 @@ public class LocalResult implements ResultInterface, ResultTarget {
         // ignore
     }
 
-    public String getExtension(int i) {
-        return expressions[i].getExtension();
+    public String getColumnMetaExtension(int i) {
+        return expressions[i].getColumnMetaExtension();
     }
 
     @Override

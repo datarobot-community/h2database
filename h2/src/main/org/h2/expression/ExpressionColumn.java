@@ -78,8 +78,8 @@ public class ExpressionColumn extends Expression {
             sql = s + "." + sql;
         }
 
-        if (withExtension && extension != null) {
-            sql = sql + " EXTENSION " + StringUtils.quoteStringSQL(extension);
+        if (withExtension && columnMetaExtension != null) {
+            sql = sql + " EXTENSION " + StringUtils.quoteStringSQL(columnMetaExtension);
         }
         return sql;
     }
@@ -346,9 +346,9 @@ public class ExpressionColumn extends Expression {
                 ValueExpression.get(ValueBoolean.get(false)));
     }
 
-    public String getExtension() {
-        String e = column.getExtension();
-        return extension == null ? e : e == null ? extension : e + extension;
+    public String getColumnMetaExtension() {
+        String e = column.getMetaExtension();
+        return columnMetaExtension == null ? e : e == null ? columnMetaExtension : e + columnMetaExtension;
     }
 
     @Override

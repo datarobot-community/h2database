@@ -337,7 +337,7 @@ public class SelectUnion extends Query {
             int scale = Math.max(l.getScale(), r.getScale());
             int displaySize = Math.max(l.getDisplaySize(), r.getDisplaySize());
             Column col = new Column(l.getAlias(), type, prec, scale, displaySize);
-            col.setExtension(l.getExtension());
+            col.setMetaExtension(l.getColumnMetaExtension());
             col.setMixedCaseName(l.getMixedCaseName());
             Expression e = new ExpressionColumn(session.getDatabase(), col);
             expressions.add(e);

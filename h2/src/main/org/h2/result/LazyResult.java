@@ -203,8 +203,8 @@ public abstract class LazyResult implements ResultInterface {
     }
 
     @Override
-    public String getExtension(int i) {
-        return expressions[i].getExtension();
+    public String getColumnMetaExtension(int i) {
+        return expressions[i].getColumnMetaExtension();
     }
 
     @Override

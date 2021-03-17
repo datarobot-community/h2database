@@ -131,8 +131,8 @@ public class Alias extends Expression {
         return expr.getColumnName();
     }
 
-    public String getExtension() {
-        String e = expr.getExtension();
+    public String getColumnMetaExtension() {
+        String e = expr.getColumnMetaExtension();
         return extension == null ? e : e == null ? extension : e + extension;
     }
 
@@ -140,8 +140,8 @@ public class Alias extends Expression {
         return mixedCase;
     }
 
-    public void setExtension(String extension) {
-        this.extension = extension;
+    public void setColumnMetaExtension(String columnMetaExtension) {
+        this.extension = columnMetaExtension;
     }
 
     public boolean isMapped() {

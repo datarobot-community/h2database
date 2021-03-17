@@ -263,7 +263,7 @@ public class CreateTable extends SchemaCommand {
                 enumerators = ((ExpressionColumn)expr).getColumn().getEnumerators();
             }
             Column col = new Column(name, type, precision, scale, displaySize, enumerators);
-            col.setExtension(expr.getExtension());
+            col.setMetaExtension(expr.getColumnMetaExtension());
             col.setMixedCaseName(expr.getMixedCaseName());
             addColumn(col);
         }

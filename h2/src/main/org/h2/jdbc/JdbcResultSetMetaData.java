@@ -11,7 +11,6 @@ import org.h2.message.DbException;
 import org.h2.message.Trace;
 import org.h2.message.TraceObject;
 import org.h2.result.ResultInterface;
-import org.h2.table.Column;
 import org.h2.util.MathUtils;
 import org.h2.value.DataType;
 
@@ -487,11 +486,11 @@ public class JdbcResultSetMetaData extends TraceObject implements
         return getTraceObjectName() + ": columns=" + columnCount;
     }
 
-    public String getExtension(int column) throws SQLException {
+    public String getColumnMetaExtension(int column) throws SQLException {
         try {
             debugCodeCall("getExtension", column);
             checkColumnIndex(column);
-            return result.getExtension(--column);
+            return result.getColumnMetaExtension(--column);
         } catch (Exception e) {
             throw logAndConvert(e);
         }

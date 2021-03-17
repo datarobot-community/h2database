@@ -35,6 +35,6 @@ public class CreateTableTest {
         Statement stat = h2.createStatement();
         stat.execute("CREATE TABLE FOO (A INTEGER extension 'foo')");
         JdbcResultSetMetaData rs = stat.executeQuery("SELECT * FROM FOO").getMetaData().unwrap(JdbcResultSetMetaData.class);
-        Assert.assertEquals(rs.getExtension(1), "foo");
+        Assert.assertEquals(rs.getColumnMetaExtension(1), "foo");
     }
 }

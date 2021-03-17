@@ -1,6 +1,6 @@
-package com.dullesopen.h2test.features;
+package org.h2.contrib.link;
 
-import com.dullesopen.h2test.TestConfig;
+import org.h2.contrib.external.TestConfig;
 import org.h2.jdbc.JdbcConnection;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;

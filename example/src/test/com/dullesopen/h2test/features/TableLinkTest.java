@@ -16,7 +16,7 @@ import static org.testng.Assert.assertEquals;
  * Miscellaneous test for linked table
  */
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlDialectInspection"})
-public class LinkedTableTest {
+public class TableLinkTest {
 
     //TODO: What to do with default schema in Teradata?
     private static final boolean BROKEN_WITHOUT_EXPLICIT_SCHEMA = false;
@@ -242,22 +242,6 @@ public class LinkedTableTest {
     }
 
     /**
-     *
-     */
-    @Test
-    public void find() throws Exception {
-        Connection ca = DriverManager.getConnection("jdbc:h2:mem:db2", "linkuser", "linkpass");
-
-        Connection cb = DriverManager.getConnection("jdbc:h2:mem:two");
-        Statement sb = cb.createStatement();
-        cb.unwrap(JdbcConnection.class).addExternalConnection("db2", ca);
-        sb.execute("CREATE SCHEMA db2 LINKED ('db2','')");
-        ca.createStatement().execute("CREATE TABLE testtable(BNUM FLOAT)");
-        sb.execute("INSERT INTO db2.testtable VALUES(10)");
-        ca.close();
-    }
-
-    /**
      * the test reproduce the bug the JDTS driver does not return information about indexes
      *
      * @throws Exception
@@ -452,24 +436,6 @@ public class LinkedTableTest {
         } catch (SQLException e) {
         }
 
-        ca.close();
-        cb.close();
-    }
-
-    @Test
-    public void testCreate() throws Exception {
-        Connection ca = DriverManager.getConnection("jdbc:h2:mem:one", "linkuser", "linkpass");
-
-        Connection cb = DriverManager.getConnection("jdbc:h2:mem:two");
-        Statement sb = cb.createStatement();
-        Utils.drop(sb, "DROP SCHEMA db2");
-        cb.unwrap(JdbcConnection.class).addExternalConnection("one", ca);
-        sb.execute("CREATE SCHEMA db2 LINKED ('one','')");
-        try {
-            sb.execute("CREATE TABLE db2.testtable(BNUM FLOAT)");
-            Assert.fail("surprise: create table through link is working now?");
-        } catch (SQLException e) {
-        }
         ca.close();
         cb.close();
     }

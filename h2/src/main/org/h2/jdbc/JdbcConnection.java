@@ -630,7 +630,7 @@ public class JdbcConnection extends TraceObject implements Connection,
         try {
             debugCodeCall("getWarnings");
             checkClosed();
-            return null;
+            return session.getWarnings();
         } catch (Exception e) {
             throw logAndConvert(e);
         }

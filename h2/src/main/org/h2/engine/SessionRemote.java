@@ -7,6 +7,7 @@ package org.h2.engine;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.sql.SQLWarning;
 import java.util.ArrayList;
 import org.h2.api.DatabaseEventListener;
 import org.h2.api.ErrorCode;
@@ -873,6 +874,15 @@ public class SessionRemote extends SessionWithState implements DataHandler {
     @Override
     public void setCurrentSchemaName(String schema) {
         throw DbException.getUnsupportedException("setSchema && remote session");
+    }
+
+    @Override
+    public SQLWarning getWarnings() {
+        return null;
+    }
+
+    @Override
+    public void clearWarnings() {
     }
 
     @Override

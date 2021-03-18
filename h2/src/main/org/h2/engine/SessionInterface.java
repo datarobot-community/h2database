@@ -6,6 +6,7 @@
 package org.h2.engine;
 
 import java.io.Closeable;
+import java.sql.SQLWarning;
 import java.util.ArrayList;
 
 import org.h2.contrib.UdfArgumentConverter;
@@ -155,6 +156,10 @@ public interface SessionInterface extends Closeable {
      * @return the current schema name
      */
     String getCurrentSchemaName();
+
+    SQLWarning getWarnings();
+
+    void clearWarnings();
 
     DbSettings getSettings();
 

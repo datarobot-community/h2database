@@ -19,6 +19,7 @@ import java.util.Properties;
 import org.h2.api.ErrorCode;
 import org.h2.engine.Constants;
 import org.h2.jdbc.JdbcSQLException;
+import org.h2.jdbc.JdbcSQLWarning;
 import org.h2.util.SortedProperties;
 import org.h2.util.StringUtils;
 import org.h2.util.Utils;
@@ -177,6 +178,12 @@ public class DbException extends RuntimeException {
      */
     public static DbException get(int errorCode, String... params) {
         return new DbException(getJdbcSQLException(errorCode, null, params));
+    }
+
+    public static JdbcSQLWarning getWarning(int errorCode, String... params) {
+        String sqlstate = ErrorCode.getState(errorCode);
+        String message = translate(sqlstate, params);
+        return new JdbcSQLWarning(message, null, sqlstate, errorCode);
     }
 
     /**

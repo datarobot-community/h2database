@@ -12,7 +12,10 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Random;
+import java.util.Deque;
+import java.util.ArrayDeque;
 import java.util.concurrent.TimeUnit;
+import java.sql.SQLWarning;
 import org.h2.api.ErrorCode;
 import org.h2.command.Command;
 import org.h2.command.CommandInterface;
@@ -26,6 +29,7 @@ import org.h2.contrib.UdfArgumentConverter;
 import org.h2.index.Index;
 import org.h2.index.ViewIndex;
 import org.h2.jdbc.JdbcConnection;
+import org.h2.jdbc.JdbcSQLWarning;
 import org.h2.message.DbException;
 import org.h2.message.Trace;
 import org.h2.message.TraceSystem;
@@ -150,6 +154,8 @@ public class Session extends SessionWithState {
 
     private Transaction transaction;
     private long startStatement = -1;
+
+    private Deque<JdbcSQLWarning> warnings = new ArrayDeque<>();
 
     public Session(Database database, User user, int id) {
         this.database = database;
@@ -1753,6 +1759,30 @@ public class Session extends SessionWithState {
             this.value = v;
         }
 
+    }
+
+    public void addWarning(JdbcSQLWarning warning) {
+        warnings.add(warning);
+    }
+
+    @Override
+    public SQLWarning getWarnings() {
+
+        JdbcSQLWarning prev = null, first = null;
+        for (JdbcSQLWarning w : warnings) {
+            if (first == null)
+                first = w;
+            if (prev != null)
+                prev.setNextException(w);
+            prev = w;
+        }
+        warnings.clear();
+        return first;
+    }
+
+    @Override
+    public void clearWarnings() {
+        warnings.clear();
     }
 
     @Override

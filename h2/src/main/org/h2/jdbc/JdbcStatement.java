@@ -288,7 +288,7 @@ public class JdbcStatement extends TraceObject implements Statement, JdbcStateme
         try {
             debugCodeCall("getWarnings");
             checkClosed();
-            return null;
+            return session.getWarnings();
         } catch (Exception e) {
             throw logAndConvert(e);
         }
@@ -303,6 +303,7 @@ public class JdbcStatement extends TraceObject implements Statement, JdbcStateme
         try {
             debugCodeCall("clearWarnings");
             checkClosed();
+            session.clearWarnings();
         } catch (Exception e) {
             throw logAndConvert(e);
         }
@@ -1025,6 +1026,7 @@ public class JdbcStatement extends TraceObject implements Statement, JdbcStateme
             resultSet = null;
             updateCount = -1;
         }
+        session.clearWarnings();
     }
 
     /**

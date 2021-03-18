@@ -153,4 +153,11 @@ public interface SessionInterface extends Closeable {
      * @return the current schema name
      */
     String getCurrentSchemaName();
+
+    DbSettings getSettings();
+
+    void setClientContext(Object context);
+
+    Object getClientContext();
+
 }

@@ -200,6 +200,11 @@ public class Database implements DataHandler {
     private QueryStatisticsData queryStatisticsData;
     private RowFactory rowFactory = RowFactory.DEFAULT;
 
+    /**
+     * client context to be passed to external schemas if required
+     */
+    public Object clientContext;
+
     public Database(ConnectionInfo ci, String cipher) {
         String name = ci.getName();
         this.dbSettings = ci.getDbSettings();
@@ -1262,7 +1267,7 @@ public class Database implements DataHandler {
         try {
             if (systemSession != null) {
                 if (powerOffCount != -1) {
-                    for (Table table : getAllTablesAndViews(false)) {
+                    for (Table table : getAllTablesAndViews(systemSession,false,false)) {
                         if (table.isGlobalTemporary()) {
                             table.removeChildrenAndResources(systemSession);
                         } else {
@@ -1288,6 +1293,9 @@ public class Database implements DataHandler {
                     meta.close(systemSession);
                     systemSession.commit(true);
                 }
+            }
+            for (Schema schema : schemas.values()) {
+                schema.close(systemSession);
             }
         } catch (DbException e) {
             trace.error(e, "close");
@@ -1528,29 +1536,34 @@ public class Database implements DataHandler {
      * @param includeMeta whether to force including the meta data tables (if
      *            true, metadata tables are always included; if false, metadata
      *            tables are only included if they are already initialized)
+     * @param force
      * @return all objects of that type
      */
-    public ArrayList<Table> getAllTablesAndViews(boolean includeMeta) {
+    public ArrayList<Table> getAllTablesAndViews(Session session, boolean includeMeta, boolean force) {
         if (includeMeta) {
             initMetaTables();
         }
         ArrayList<Table> list = New.arrayList();
         for (Schema schema : schemas.values()) {
-            list.addAll(schema.getAllTablesAndViews());
+            list.addAll(schema.getAllTablesAndViews(session, force));
         }
         return list;
     }
 
+    public ArrayList<Table> getAllTablesAndViews(boolean includeMeta) {
+        return getAllTablesAndViews(null,includeMeta, false);
+    }
     /**
      * Get the tables with the given name, if any.
      *
+     * @param session
      * @param name the table name
      * @return the list
      */
-    public ArrayList<Table> getTableOrViewByName(String name) {
+    public ArrayList<Table> getTableOrViewByName(Session session, String name) {
         ArrayList<Table> list = New.arrayList();
         for (Schema schema : schemas.values()) {
-            Table table = schema.getTableOrViewByName(name);
+            Table table = schema.getTableOrViewByName(session, name);
             if (table != null) {
                 list.add(table);
             }
@@ -1661,7 +1674,7 @@ public class Database implements DataHandler {
     public synchronized void renameSchemaObject(Session session,
             SchemaObject obj, String newName) {
         checkWritingAllowed();
-        obj.getSchema().rename(obj, newName);
+        obj.getSchema().rename(session, obj, newName);
         updateMetaAndFirstLevelChildren(session, obj);
     }
 
@@ -1853,7 +1866,9 @@ public class Database implements DataHandler {
             if (comment != null) {
                 removeDatabaseObject(session, comment);
             }
-            obj.getSchema().remove(obj);
+            obj.getSchema().remove(session, obj);
+            Schema schema=obj.getSchema();
+            String name = obj.getName();
             int id = obj.getId();
             if (!starting) {
                 Table t = getDependentTable(obj, null);
@@ -1865,6 +1880,7 @@ public class Database implements DataHandler {
                 obj.removeChildrenAndResources(session);
             }
             removeMeta(session, id);
+            schema.removeExternalResources(type, name);
         }
     }
 

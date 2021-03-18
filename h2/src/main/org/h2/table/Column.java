@@ -72,6 +72,7 @@ public class Column {
     private int displaySize;
     private Table table;
     private String name;
+    private String mixedCaseName;
     private int columnId;
     private boolean nullable = true;
     private Expression defaultExpression;

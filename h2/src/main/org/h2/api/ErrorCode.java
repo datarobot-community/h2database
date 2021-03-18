@@ -1996,6 +1996,19 @@ public class ErrorCode {
 
     // next are 90110, 90122, 90144
 
+    /**
+     * The error with code <code>99003</code> is thrown when
+     * trying to delete or update a read only table in the external schema
+     */
+    public static final int TABLE_IS_READ_ONLY = 99003;
+
+    /**
+     * The error with code <code>99003</code> is thrown when
+     * trying to delete/update/select a INSERT only table in external schema
+     */
+    public static final int TABLE_IS_INSERT_ONLY = 99004;
+
+
     private ErrorCode() {
         // utility class
     }

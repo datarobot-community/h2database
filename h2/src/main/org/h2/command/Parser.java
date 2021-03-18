@@ -397,6 +397,8 @@ public class Parser {
             case 'F':
                 if (isToken("FROM")) {
                     c = parseSelect();
+                } else if (readIf("FLUSH")) {
+                    c = parseFlush();
                 }
                 break;
             case 'g':
@@ -584,6 +586,16 @@ public class Parser {
         readIf("WORK");
         return command;
     }
+
+    private TransactionCommand parseFlush() {
+        TransactionCommand command;
+        if (readIf("SCHEMAS")) {
+        }
+        command = new TransactionCommand(session, CommandInterface.FLUSH_SCHEMAS);
+        return command;
+
+    }
+
 
     private TransactionCommand parseShutdown() {
         int type = CommandInterface.SHUTDOWN;
@@ -4303,7 +4315,7 @@ public class Parser {
         } else if (readIf("ROLE")) {
             return parseCreateRole();
         } else if (readIf("SCHEMA")) {
-            return parseCreateSchema();
+            return parseCreateSchema(force);
         } else if (readIf("CONSTANT")) {
             return parseCreateConstant();
         } else if (readIf("DOMAIN")) {
@@ -4600,8 +4612,8 @@ public class Parser {
         return command;
     }
 
-    private CreateSchema parseCreateSchema() {
-        CreateSchema command = new CreateSchema(session);
+    private CreateSchema parseCreateSchema(boolean force) {
+        CreateSchema command = new CreateSchema(session,force);
         command.setIfNotExists(readIfNotExists());
         command.setSchemaName(readUniqueIdentifier());
         if (readIf("AUTHORIZATION")) {
@@ -4611,6 +4623,13 @@ public class Parser {
         }
         if (readIf("WITH")) {
             command.setTableEngineParams(readTableEngineParams());
+        }
+        if(readIf("EXTERNAL")) {
+            read("(");
+            command.setExternal(readString());
+            read(",");
+            command.setExternalParameters(readString());
+            read(")");
         }
         return command;
     }

@@ -1073,7 +1073,7 @@ public class Select extends Query {
         StatementBuilder buff = new StatementBuilder();
         for (TableFilter f : topFilters) {
             Table t = f.getTable();
-            if (t.isView() && ((TableView) t).isRecursive()) {
+            if (t.isView() && t instanceof TableView && ((TableView) t).isRecursive()) {
                 buff.append("WITH RECURSIVE ").append(t.getName()).append('(');
                 buff.resetCount();
                 for (Column c : t.getColumns()) {

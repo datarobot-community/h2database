@@ -873,4 +873,14 @@ public class SessionRemote extends SessionWithState implements DataHandler {
     public void setCurrentSchemaName(String schema) {
         throw DbException.getUnsupportedException("setSchema && remote session");
     }
+
+    @Override
+    public void setClientContext(Object context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Object getClientContext() {
+        throw new UnsupportedOperationException();
+    }
 }

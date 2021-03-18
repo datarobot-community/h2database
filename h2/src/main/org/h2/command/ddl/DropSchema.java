@@ -43,6 +43,7 @@ public class DropSchema extends DefineCommand {
             if (!schema.canDrop()) {
                 throw DbException.get(ErrorCode.SCHEMA_CAN_NOT_BE_DROPPED_1, schemaName);
             }
+            schema.close(session);
             db.removeDatabaseObject(session, schema);
         }
         return 0;

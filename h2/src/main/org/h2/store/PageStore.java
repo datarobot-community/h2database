@@ -1648,7 +1648,7 @@ public class PageStore implements CacheWriter {
             if (index.isTemporary()) {
                 pageStoreSession.removeLocalTempTableIndex(index);
             } else {
-                index.getSchema().remove(index);
+                index.getSchema().remove(null, index);
             }
         }
         index.remove(pageStoreSession);

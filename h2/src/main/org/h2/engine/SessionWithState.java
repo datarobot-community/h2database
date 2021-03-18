@@ -57,4 +57,8 @@ abstract class SessionWithState implements SessionInterface {
         }
     }
 
+    @Override
+    public DbSettings getSettings() {
+        return null;
+    }
 }

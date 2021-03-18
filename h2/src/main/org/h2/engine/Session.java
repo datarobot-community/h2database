@@ -634,6 +634,9 @@ public class Session extends SessionWithState {
             // (create/drop table and so on)
             database.commit(this);
         }
+        for (Schema schema : database.getAllSchemas()) {
+            schema.commit(this, ddl);
+        }
         removeTemporaryLobs(true);
         if (undoLog.size() > 0) {
             // commit the rows when using MVCC
@@ -1707,6 +1710,12 @@ public class Session extends SessionWithState {
         tablesToAnalyze.add(table);
     }
 
+    public void flushSchemas() {
+        for (Schema schema : database.getAllSchemas()) {
+            schema.flush(this);
+        }
+    }
+
     /**
      * Represents a savepoint (a position in a transaction to where one can roll
      * back to).
@@ -1743,5 +1752,19 @@ public class Session extends SessionWithState {
             this.value = v;
         }
 
+    }
+
+    @Override
+    public DbSettings getSettings() {
+        return database.getSettings();
+    }
+
+    @Override
+    public void setClientContext(Object clientContext) {
+        database.clientContext = clientContext;
+    }
+
+    public Object getClientContext() {
+        return database.clientContext;
     }
 }

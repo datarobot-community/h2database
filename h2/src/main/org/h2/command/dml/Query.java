@@ -68,6 +68,8 @@ public abstract class Query extends Prepared {
     private boolean cacheableChecked;
     private boolean neverLazy;
 
+    protected boolean removeDuplicateColumns;
+
     Query(Session session) {
         super(session);
     }
@@ -595,4 +597,9 @@ public abstract class Query extends Prepared {
         isEverything(visitor);
         return visitor.getMaxDataModificationId();
     }
+
+    public void setRemoveDuplicateColumns(boolean removeDuplicateColumns) {
+        this.removeDuplicateColumns = removeDuplicateColumns;
+    }
+
 }

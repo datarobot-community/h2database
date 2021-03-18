@@ -20,6 +20,7 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import org.h2.api.ErrorCode;
 import org.h2.engine.Constants;
+import org.h2.engine.Mode;
 import org.h2.engine.SysProperties;
 import org.h2.message.DbException;
 import org.h2.store.DataHandler;
@@ -508,9 +509,11 @@ public abstract class Value {
      * Divide by a value and return the result.
      *
      * @param v the value to divide by
+     * @param noninteger force division of integer numbers as double
+     * @param allowZeroDivide
      * @return the result
      */
-    public Value divide(@SuppressWarnings("unused") Value v) {
+    public Value divide(@SuppressWarnings("unused") Value v, boolean noninteger, boolean allowZeroDivide) {
         throw throwUnsupportedExceptionForType("/");
     }
 
@@ -1253,6 +1256,10 @@ public abstract class Value {
      */
     public interface ValueBlob {
         // this is a marker interface
+    }
+
+    public Value aggregate(Value v, Mode mode) {
+        return add(v);
     }
 
 }

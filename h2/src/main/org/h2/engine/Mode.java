@@ -160,6 +160,80 @@ public class Mode {
      */
     public boolean allowAffinityKey;
 
+    /**
+     * Single space is the same as NULL in most operations
+     */
+    public boolean spaceIsNull;
+
+    /**
+     * Skip over NaN and Infinite for aggregate calculations
+     */
+    public boolean aggregateIgnoreNanInfinite;
+
+    /**
+     * Division 0/0 result in NULL
+     */
+    public boolean allowZeroDivide;
+
+    /**
+     * CONCAT function returns predefined size instead of sum of the strings
+     */
+    public Integer concatReturnSize;
+
+    /**
+     * Cast explicitly specified decimal constants to ValueDouble
+     */
+    public boolean decimalConstantAsDouble;
+
+    /**
+     * Disable three-valued logic for comparison operations with null,
+     * treats two nulls as equal.
+     * <p>
+     * not compatible with ANSI
+     */
+
+    public boolean disableThreeValuedLogic;
+
+    /**
+     * For user defined function:
+     * Input argument: pass NULL as Double.NaN and Float.NaN for double and float
+     * Return value: convert Double.NaN to NULL.
+     */
+
+    public boolean doubleNanSameAsNull;
+
+    /**
+     * Allow to use GROUP BY n, where n is column index in the SELECT list, similar to ORDER BY
+     */
+    public boolean groupByColumnNumber;
+
+    /**
+     * Allow lateral column alias in expression if prefixed by CALCULATED keyword
+     */
+    public boolean lateralColumnAlias;
+
+    /**
+     * Integer numbers are divided as doubles
+     */
+    public boolean nonIntegerDivision;
+
+    /**
+     * Remove duplicate column names from the resulting table
+     * <p>
+     * not compatible with ANSI
+     */
+    public boolean removeDuplicateNamesOnCreateTableAs;
+
+    /**
+     * Silently truncate string value if it does ot fit into target
+     */
+    public boolean truncateStringValue;
+
+    /**
+     * use update count in non ANSI mode, returns non zero value in case of SELECT operations
+     */
+    public boolean updateCountOnCreateTable;
+
     private final String name;
 
     static {
@@ -262,6 +336,25 @@ public class Mode {
         mode.nullConcatIsNull = true;
         mode.allowAffinityKey = true;
         mode.indexDefinitionInCreateTable = true;
+        add(mode);
+
+        mode = new Mode("Carolina");
+        mode.nullConcatIsNull = false;
+        mode.treatEmptyStringsAsNull = true;
+        mode.spaceIsNull = true;
+        // below are carolina specific modes
+        mode.aggregateIgnoreNanInfinite = true;
+        mode.allowZeroDivide = true;
+        mode.concatReturnSize = 200;
+        mode.decimalConstantAsDouble = true;
+        mode.disableThreeValuedLogic = true;
+        mode.doubleNanSameAsNull = true;
+        mode.groupByColumnNumber = true;
+        mode.lateralColumnAlias = true;
+        mode.nonIntegerDivision = true;
+        mode.removeDuplicateNamesOnCreateTableAs = true;
+        mode.truncateStringValue = true;
+        mode.updateCountOnCreateTable = true;
         add(mode);
     }
 

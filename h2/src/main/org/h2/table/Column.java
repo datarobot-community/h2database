@@ -364,6 +364,8 @@ public class Column {
         }
         value = value.convertScale(mode.convertOnlyToSmallerScale, scale);
         if (precision > 0) {
+            if (mode.truncateStringValue)
+                value=value.convertPrecision(precision,true);
             if (!value.checkPrecision(precision)) {
                 String s = value.getTraceSQL();
                 if (s.length() > 127) {

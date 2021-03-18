@@ -9,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import org.h2.api.ErrorCode;
+import org.h2.engine.Mode;
 import org.h2.message.DbException;
 
 /**
@@ -77,10 +78,13 @@ public class ValueDouble extends Value {
     }
 
     @Override
-    public Value divide(Value v) {
+    public Value divide(Value v, boolean noninteger, boolean allowZeroDivide) {
         ValueDouble v2 = (ValueDouble) v;
         if (v2.value == 0.0) {
-            throw DbException.get(ErrorCode.DIVISION_BY_ZERO_1, getSQL());
+            if (allowZeroDivide)
+                return ValueNull.INSTANCE;
+            else
+                throw DbException.get(ErrorCode.DIVISION_BY_ZERO_1, getSQL());
         }
         return ValueDouble.get(value / v2.value);
     }
@@ -201,6 +205,18 @@ public class ValueDouble extends Value {
 
     public boolean checkPrecision(long precision) {
         return true;
+    }
+
+    @Override
+    public Value aggregate(Value v, Mode mode) {
+        ValueDouble v2 = (ValueDouble) v;
+        if (mode.aggregateIgnoreNanInfinite) {
+            if ((Double.isNaN(v2.value) || Double.isInfinite(v2.value)))
+                return this;
+            if ((Double.isNaN(value) || Double.isInfinite(value)))
+                return v;
+        }
+        return ValueDouble.get(value + v2.value);
     }
 
 }

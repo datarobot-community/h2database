@@ -65,10 +65,13 @@ public class ValueFloat extends Value {
     }
 
     @Override
-    public Value divide(Value v) {
+    public Value divide(Value v, boolean noninteger, boolean allowZeroDivide) {
         ValueFloat v2 = (ValueFloat) v;
         if (v2.value == 0.0) {
-            throw DbException.get(ErrorCode.DIVISION_BY_ZERO_1, getSQL());
+            if (allowZeroDivide)
+                return ValueNull.INSTANCE;
+            else
+                throw DbException.get(ErrorCode.DIVISION_BY_ZERO_1, getSQL());
         }
         return ValueFloat.get(value / v2.value);
     }

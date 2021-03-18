@@ -88,7 +88,7 @@ public class ValueDecimal extends Value {
     }
 
     @Override
-    public Value divide(Value v) {
+    public Value divide(Value v, boolean noninteger, boolean allowZeroDivide) {
         ValueDecimal dec = (ValueDecimal) v;
         if (dec.value.signum() == 0) {
             throw DbException.get(ErrorCode.DIVISION_BY_ZERO_1, getSQL());

@@ -2003,6 +2003,29 @@ public class ErrorCode {
     public static final int OPERATION_NOT_SUPPORTED_WITH_LINKED_VIEW = 90800;
 
     /**
+     * The error is thrown when you try to pass null value as an argument
+     * to the Java function with primitive data type
+     */
+    public static final int NULL_FOR_JAVA_PRIMITIVE = 90801;
+
+    /**
+     * The error with code <code>90802</code> is thrown when the integer
+     * index that is used in the GROUP BY is not in the SELECT list.
+     */
+    public static final int GROUP_BY_INVALID_INDEX = 90802;
+
+
+    /**
+     * The error with code <code>90803</code> is thrown when lateral alias
+     * not found in the resolve list or used before definition
+     */
+    public static final int LATERAL_ALIAS_NOT_FOUND = 90803;
+
+
+    public static final int DUPLICATE_COLUMN_NAME_W = 99001;
+    public static final int MUST_GROUP_BY_COLUMN_W = 99002;
+
+    /**
      * The error with code <code>99003</code> is thrown when
      * trying to delete or update a read only table in the external schema
      */
@@ -2077,6 +2100,8 @@ public class ErrorCode {
         case INDEX_ALREADY_EXISTS_1: return "42S11";
         case INDEX_NOT_FOUND_1: return "42S12";
         case DUPLICATE_COLUMN_NAME_1: return "42S21";
+        case DUPLICATE_COLUMN_NAME_W: return "W0001";
+        case MUST_GROUP_BY_COLUMN_W: return "W0002";
         case COLUMN_NOT_FOUND_1: return "42S22";
 
         // 0A: feature not supported

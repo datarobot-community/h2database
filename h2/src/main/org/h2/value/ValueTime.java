@@ -174,7 +174,7 @@ public class ValueTime extends Value {
     }
 
     @Override
-    public Value divide(Value v) {
+    public Value divide(Value v, boolean noninteger, boolean allowZeroDivide) {
         return ValueTime.fromNanos((long) (nanos / v.getDouble()));
     }
 

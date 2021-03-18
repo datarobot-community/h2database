@@ -153,6 +153,7 @@ public class Function extends Expression implements FunctionCall {
     private int displaySize;
     private final Database database;
 
+    public static final int IS_NULL = 601;
     static {
         // DATE_PART
         DATE_PART.put("SQL_TSI_YEAR", Calendar.YEAR);
@@ -486,6 +487,9 @@ public class Function extends Expression implements FunctionCall {
 
         // ON DUPLICATE KEY VALUES function
         addFunction("VALUES", VALUES, 1, Value.NULL, false, true, false);
+
+        addFunctionWithNull("IS_NULL", IS_NULL, 1, Value.NULL);
+
     }
 
     protected Function(Database database, FunctionInfo info) {
@@ -754,6 +758,9 @@ public class Function extends Expression implements FunctionCall {
             }
             break;
         }
+        case IS_NULL:
+                return ValueBoolean.get(v0 == ValueNull.INSTANCE );
+
         case HEXTORAW:
             result = ValueString.get(hexToRaw(v0.getString()),
                     database.getMode().treatEmptyStringsAsNull);
@@ -2572,6 +2579,9 @@ public class Function extends Expression implements FunctionCall {
                     precision = Long.MAX_VALUE;
                 }
             }
+            Integer overwrite = database.getMode().concatReturnSize;
+            if (overwrite != null)
+                precision = overwrite;
             break;
         case HEXTORAW:
             precision = (args[0].getPrecision() + 3) / 4;

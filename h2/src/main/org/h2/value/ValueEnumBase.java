@@ -39,9 +39,9 @@ public class ValueEnumBase extends Value {
     }
 
     @Override
-    public Value divide(final Value v) {
+    public Value divide(final Value v, boolean noninteger, boolean allowZeroDivide) {
         final Value iv = v.convertTo(Value.INT);
-        return convertTo(Value.INT).divide(iv);
+        return convertTo(Value.INT).divide(iv, false, false);
     }
 
     @Override

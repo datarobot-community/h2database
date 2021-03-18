@@ -61,6 +61,7 @@ public class Operation extends Expression {
     private int opType;
     private Expression left, right;
     private int dataType;
+    private boolean convertLeft = true;
     private boolean convertRight = true;
 
     public Operation(int opType, Expression left, Expression right) {
@@ -107,7 +108,15 @@ public class Operation extends Expression {
 
     @Override
     public Value getValue(Session session) {
-        Value l = left.getValue(session).convertTo(dataType);
+        Value l;
+        if (left == null) {
+            l = null;
+        } else {
+            l = left.getValue(session);
+            if (convertLeft) {
+                l = l.convertTo(dataType);
+            }
+        }
         Value r;
         if (right == null) {
             r = null;
@@ -157,7 +166,8 @@ public class Operation extends Expression {
             if (l == ValueNull.INSTANCE || r == ValueNull.INSTANCE) {
                 return ValueNull.INSTANCE;
             }
-            return l.divide(r);
+            Mode mode = session.getDatabase().getMode();
+            return l.divide(r, mode.nonIntegerDivision, mode.allowZeroDivide);
         case MODULUS:
             if (l == ValueNull.INSTANCE || r == ValueNull.INSTANCE) {
                 return ValueNull.INSTANCE;

@@ -420,14 +420,14 @@ public class Aggregate extends Expression {
                 // example: sum(id > 3) (count the rows)
                 dataType = Value.LONG;
             } else if (!DataType.supportsAdd(dataType)) {
-                throw DbException.get(ErrorCode.SUM_OR_AVG_ON_WRONG_DATATYPE_1, getSQL());
+                throw DbException.get(ErrorCode.SUM_OR_AVG_ON_WRONG_DATATYPE_1, getSQL(),Integer.toString(dataType));
             } else {
                 dataType = DataType.getAddProofType(dataType);
             }
             break;
         case AVG:
             if (!DataType.supportsAdd(dataType)) {
-                throw DbException.get(ErrorCode.SUM_OR_AVG_ON_WRONG_DATATYPE_1, getSQL());
+                throw DbException.get(ErrorCode.SUM_OR_AVG_ON_WRONG_DATATYPE_1, getSQL(),Integer.toString(dataType));
             }
             break;
         case MIN:

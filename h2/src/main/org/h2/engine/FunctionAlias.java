@@ -478,8 +478,22 @@ public class FunctionAlias extends SchemaObjectBase {
                             // otherwise the function can't be called at all.
                             o = DataType.getDefaultForPrimitiveType(paramClass);
                         } else {
-                            // NULL for a java primitive: return NULL
-                            return ValueNull.INSTANCE;
+                            if (database.getMode().doubleNanSameAsNull) {
+                                if (paramClass.equals(Double.TYPE)) {
+                                    o = Double.NaN;
+                                } else if (paramClass.equals(Float.TYPE)) {
+                                    o = Float.NaN;
+                                } else
+                                    throw DbException.get(ErrorCode.NULL_FOR_JAVA_PRIMITIVE, method.toString(), String.valueOf(a));
+                            } else {
+                                // NULL for a java primitive: return NULL
+                                return ValueNull.INSTANCE;
+                            }
+                        }
+                    } else if (database.getMode().doubleNanSameAsNull && paramClass.equals(String.class)) {
+                        Value value = database.convertToUserDefined(v, args[a].getType(), Value.STRING);
+                        if (value != null) {
+                            o = value.getString();
                         }
                     }
                 } else {
@@ -523,6 +537,21 @@ public class FunctionAlias extends SchemaObjectBase {
                 }
                 if (Value.class.isAssignableFrom(method.getReturnType())) {
                     return (Value) returnValue;
+                }
+                if (database.getMode().doubleNanSameAsNull && returnValue instanceof Double) {
+                    double d = (Double) returnValue;
+                    if (Double.isNaN(d))
+                        return ValueNull.INSTANCE;
+                }
+                if (database.getMode().spaceIsNull && returnValue instanceof String) {
+                    String s = (String) returnValue;
+                    switch (s.length()) {
+                        case 0:
+                            return ValueNull.INSTANCE;
+                        case 1:
+                            if (s.charAt(0) == ' ')
+                                return ValueNull.INSTANCE;
+                    }
                 }
                 Value ret = DataType.convertToValue(session, returnValue, dataType);
                 return ret.convertTo(dataType);

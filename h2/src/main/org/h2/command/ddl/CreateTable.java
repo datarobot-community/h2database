@@ -102,6 +102,7 @@ public class CreateTable extends SchemaCommand {
         if (!transactional) {
             session.commit(true);
         }
+        int count=0;
         Database db = session.getDatabase();
         if (!db.isPersistent()) {
             data.persistIndexes = false;
@@ -189,7 +190,7 @@ public class CreateTable extends SchemaCommand {
                     insert.setTable(table);
                     insert.setInsertFromSelect(true);
                     insert.prepare();
-                    insert.update();
+                    count = insert.update();
                 } finally {
                     session.setUndoLogEnabled(old);
                 }
@@ -224,7 +225,7 @@ public class CreateTable extends SchemaCommand {
             }
             throw e;
         }
-        return 0;
+        return session.getDatabase().getMode().updateCountOnCreateTable ? count : 0;
     }
 
     private void generateColumnsFromQuery() {

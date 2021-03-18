@@ -148,12 +148,16 @@ import org.h2.value.ValueBytes;
 import org.h2.value.ValueDate;
 import org.h2.value.ValueDecimal;
 import org.h2.value.ValueEnum;
+import org.h2.value.ValueDouble;
 import org.h2.value.ValueInt;
 import org.h2.value.ValueLong;
 import org.h2.value.ValueNull;
 import org.h2.value.ValueString;
 import org.h2.value.ValueTime;
 import org.h2.value.ValueTimestamp;
+
+import org.h2.command.dml.GroupBy;
+import org.h2.expression.LateralAlias;
 
 /**
  * The parser is used to convert a SQL statement string to an command object.
@@ -1210,6 +1214,7 @@ public class Parser {
                 Query query = parseSelectUnion();
                 read(")");
                 query.setParameterList(New.arrayList(parameters));
+                query.setRemoveDuplicateColumns(true);
                 query.init();
                 Session s;
                 if (createView != null) {
@@ -1759,6 +1764,10 @@ public class Parser {
     }
 
     private Query parseSelect() {
+        return parseSelect(false);
+    }
+
+    private Query parseSelect(boolean removeDuplicateColumns) {
         int paramIndex = parameters.size();
         Query command = parseSelectUnion();
         ArrayList<Parameter> params = New.arrayList();
@@ -1766,6 +1775,7 @@ public class Parser {
             params.add(parameters.get(i));
         }
         command.setParameterList(params);
+        command.setRemoveDuplicateColumns(removeDuplicateColumns);
         command.init();
         return command;
     }
@@ -2132,10 +2142,16 @@ public class Parser {
         if (readIf("GROUP")) {
             read("BY");
             command.setGroupQuery();
-            ArrayList<Expression> list = New.arrayList();
+            ArrayList<GroupBy> list = New.arrayList();
             do {
                 Expression expr = readExpression();
-                list.add(expr);
+                if (database.getMode().groupByColumnNumber && expr instanceof ValueExpression &&
+                        expr.getType() == Value.INT) {
+                    int index = expr.getValue(null).getInt();
+                    list.add(new GroupBy(index));
+                }
+                else
+                    list.add(new GroupBy(expr));
             } while (readIf(","));
             command.setGroupBy(list);
         }
@@ -2880,6 +2896,11 @@ public class Parser {
             }
             break;
         case IDENTIFIER:
+            if (database.getMode().lateralColumnAlias && readIf("CALCULATED")) {
+                r = new LateralAlias(currentToken);
+                read();
+                break;
+            }
             String name = currentToken;
             if (currentTokenQuoted) {
                 read();
@@ -3575,7 +3596,7 @@ public class Parser {
         } catch (NumberFormatException e) {
             throw DbException.get(ErrorCode.DATA_CONVERSION_ERROR_1, e, sub);
         }
-        currentValue = ValueDecimal.get(bd);
+        currentValue = database.getMode().decimalConstantAsDouble ? ValueDouble.get(bd.doubleValue()) : ValueDecimal.get(bd);
         currentTokenType = VALUE;
     }
 
@@ -6221,6 +6242,7 @@ public class Parser {
         command.setIfNotExists(ifNotExists);
         command.setTableName(tableName);
         command.setComment(readCommentIf());
+        boolean removeDuplicateColumns = true;
         if (readIf("(")) {
             if (!readIf(")")) {
                 do {
@@ -6243,6 +6265,7 @@ public class Parser {
                             command.addConstraintCommand(pk);
                         }
                         command.addColumn(column);
+                        removeDuplicateColumns=false;
                         String constraintName = null;
                         if (readIf("CONSTRAINT")) {
                             constraintName = readColumnIdentifier();
@@ -6382,7 +6405,7 @@ public class Parser {
             if (readIf("SORTED")) {
                 command.setSortedInsertMode(true);
             }
-            command.setQuery(parseSelect());
+            command.setQuery(parseSelect(removeDuplicateColumns));
         }
         // for MySQL compatibility
         if (readIf("ROW_FORMAT")) {

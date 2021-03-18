@@ -58,11 +58,11 @@ public class ConditionInConstantSet extends Condition {
     @Override
     public Value getValue(Session session) {
         Value x = left.getValue(session);
-        if (x == ValueNull.INSTANCE) {
+        if (x == ValueNull.INSTANCE && !session.getDatabase().getMode().disableThreeValuedLogic) {
             return x;
         }
         boolean result = valueSet.contains(x);
-        if (!result) {
+        if (!result && !session.getDatabase().getMode().disableThreeValuedLogic) {
             boolean setHasNull = valueSet.contains(ValueNull.INSTANCE);
             if (setHasNull) {
                 return ValueNull.INSTANCE;

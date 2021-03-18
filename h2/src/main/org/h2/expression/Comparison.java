@@ -217,8 +217,8 @@ public class Comparison extends Condition {
             if (SysProperties.CHECK && (left == null || right == null)) {
                 DbException.throwInternalError(left + " " + right);
             }
-            if (left == ValueExpression.getNull() ||
-                    right == ValueExpression.getNull()) {
+            if ((left == ValueExpression.getNull() ||
+                    right == ValueExpression.getNull()) && !session.getDatabase().getMode().disableThreeValuedLogic) {
                 // TODO NULL handling: maybe issue a warning when comparing with
                 // a NULL constants
                 if ((compareType & NULL_SAFE) == 0) {
@@ -249,18 +249,60 @@ public class Comparison extends Condition {
             }
             return ValueBoolean.get(result);
         }
-        if (l == ValueNull.INSTANCE) {
-            if ((compareType & NULL_SAFE) == 0) {
-                return ValueNull.INSTANCE;
-            }
-        }
         Value r = right.getValue(session);
-        if (r == ValueNull.INSTANCE) {
+        int dataType = Value.getHigherOrder(left.getType(), right.getType());
+        if (session.getDatabase().getMode().disableThreeValuedLogic) {
+            if (l == ValueNull.INSTANCE && r == ValueNull.INSTANCE) {
+                switch (compareType) {
+                    case Comparison.SMALLER:
+                    case Comparison.BIGGER:
+                    case Comparison.NOT_EQUAL:
+                        return ValueBoolean.get(false);
+                    case Comparison.SMALLER_EQUAL:
+                    case Comparison.BIGGER_EQUAL:
+                    case Comparison.EQUAL:
+                    case Comparison.NULL_SAFE:
+                        return ValueBoolean.get(true);
+                    default:
+                        throw new IllegalArgumentException();
+                }
+            } else if (l == ValueNull.INSTANCE) {
+                switch (compareType) {
+                    case Comparison.EQUAL:
+                    case Comparison.BIGGER_EQUAL:
+                    case Comparison.BIGGER:
+                        return ValueBoolean.get(false);
+                    case Comparison.SMALLER:
+                    case Comparison.SMALLER_EQUAL:
+                    case Comparison.NOT_EQUAL:
+                        return ValueBoolean.get(true);
+                    case Comparison.NULL_SAFE:
+                        return ValueBoolean.get(false);
+                    default:
+                        throw new IllegalArgumentException();
+                }
+            } else if (r == ValueNull.INSTANCE) {
+                switch (compareType) {
+                    case Comparison.EQUAL:
+                    case Comparison.SMALLER:
+                    case Comparison.SMALLER_EQUAL:
+                        return ValueBoolean.get(false);
+                    case Comparison.BIGGER_EQUAL:
+                    case Comparison.BIGGER:
+                    case Comparison.NOT_EQUAL:
+                        return ValueBoolean.get(true);
+                    case Comparison.NULL_SAFE:
+                        return ValueBoolean.get(false);
+                    default:
+                        throw new IllegalArgumentException();
+                }
+            }
+
+        } else if (l == ValueNull.INSTANCE || r == ValueNull.INSTANCE) {
             if ((compareType & NULL_SAFE) == 0) {
                 return ValueNull.INSTANCE;
             }
         }
-        int dataType = Value.getHigherOrder(left.getType(), right.getType());
         l = l.convertTo(dataType);
         r = r.convertTo(dataType);
         boolean result = compareNotNull(database, l, r, compareType);

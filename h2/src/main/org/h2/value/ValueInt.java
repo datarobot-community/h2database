@@ -100,10 +100,16 @@ public class ValueInt extends Value {
     }
 
     @Override
-    public Value divide(Value v) {
+    public Value divide(Value v, boolean noninteger, boolean allowZeroDivide) {
         ValueInt other = (ValueInt) v;
+        if (noninteger) {
+            return ValueDouble.get(value / (double) other.value);
+        }
         if (other.value == 0) {
-            throw DbException.get(ErrorCode.DIVISION_BY_ZERO_1, getSQL());
+            if (allowZeroDivide)
+                return ValueNull.INSTANCE;
+            else
+                throw DbException.get(ErrorCode.DIVISION_BY_ZERO_1, getSQL());
         }
         return ValueInt.get(value / other.value);
     }

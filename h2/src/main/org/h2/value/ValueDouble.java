@@ -179,4 +179,8 @@ public class ValueDouble extends Value {
         return compareSecure((ValueDouble) other, null) == 0;
     }
 
+    public boolean checkPrecision(long precision) {
+        return true;
+    }
+
 }

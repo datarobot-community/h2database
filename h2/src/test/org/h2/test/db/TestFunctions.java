@@ -697,6 +697,11 @@ public class TestFunctions extends TestBase implements AggregateFunction {
         }
 
         @Override
+        public int getPrecision(int[] precisions, long[] longs) throws SQLException {
+            return Integer.MAX_VALUE;
+        }
+
+        @Override
         public void init(Connection conn) {
             // nothing to do
         }
@@ -718,6 +723,11 @@ public class TestFunctions extends TestBase implements AggregateFunction {
         @Override
         public Object getResult() {
             return list.get(list.size() / 2);
+        }
+
+        @Override
+        public int getPrecision(int[] precisions, long[] longs) throws SQLException {
+            return Integer.MAX_VALUE;
         }
 
         @Override
@@ -2444,6 +2454,11 @@ public class TestFunctions extends TestBase implements AggregateFunction {
             throw new RuntimeException("unexpected data type");
         }
         return Types.DECIMAL;
+    }
+
+    @Override
+    public int getPrecision(int[] precisions, long[] longs) throws SQLException {
+        return Integer.MAX_VALUE;
     }
 
     @Override

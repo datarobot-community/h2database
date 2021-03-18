@@ -35,6 +35,7 @@ import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 import org.h2.api.ErrorCode;
 import org.h2.command.CommandInterface;
+import org.h2.contrib.UdfArgumentConverter;
 import org.h2.engine.ConnectionInfo;
 import org.h2.engine.Constants;
 import org.h2.engine.Mode;
@@ -2059,6 +2060,10 @@ public class JdbcConnection extends TraceObject implements Connection,
 
     public Object getClientContext() {
         return session.getClientContext();
+    }
+
+    public void setUdfArgumentConverter(UdfArgumentConverter conversion) {
+        session.setUdfArgumentConverter(conversion);
     }
 
 }

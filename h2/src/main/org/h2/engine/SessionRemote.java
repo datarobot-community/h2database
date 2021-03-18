@@ -14,6 +14,7 @@ import org.h2.api.JavaObjectSerializer;
 import org.h2.command.CommandInterface;
 import org.h2.command.CommandRemote;
 import org.h2.command.dml.SetTypes;
+import org.h2.contrib.UdfArgumentConverter;
 import org.h2.jdbc.JdbcSQLException;
 import org.h2.message.DbException;
 import org.h2.message.Trace;
@@ -883,4 +884,10 @@ public class SessionRemote extends SessionWithState implements DataHandler {
     public Object getClientContext() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void setUdfArgumentConverter(UdfArgumentConverter conversion) {
+        throw new UnsupportedOperationException();
+    }
+
 }

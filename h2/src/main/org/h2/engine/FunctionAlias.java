@@ -46,6 +46,10 @@ public class FunctionAlias extends SchemaObjectBase {
     private boolean deterministic;
     private boolean bufferResultSetToLocalTemp = true;
 
+    private String precisionClassName;
+    private String precisionMethodName;
+    private Method precision;
+
     private FunctionAlias(Schema schema, int id, String name) {
         initSchemaObjectBase(schema, id, name, Trace.FUNCTION);
     }
@@ -59,11 +63,12 @@ public class FunctionAlias extends SchemaObjectBase {
      * @param javaClassMethod the class and method name
      * @param force create the object even if the class or method does not exist
      * @param bufferResultSetToLocalTemp whether the result should be buffered
+     * @param force           create the object even if the class or method does not exist
      * @return the database object
      */
     public static FunctionAlias newInstance(
             Schema schema, int id, String name, String javaClassMethod,
-            boolean force, boolean bufferResultSetToLocalTemp) {
+            boolean force, boolean bufferResultSetToLocalTemp, String precisionJavaClassMethod) {
         FunctionAlias alias = new FunctionAlias(schema, id, name);
         int paren = javaClassMethod.indexOf('(');
         int lastDot = javaClassMethod.lastIndexOf('.', paren < 0 ?
@@ -74,6 +79,15 @@ public class FunctionAlias extends SchemaObjectBase {
         alias.className = javaClassMethod.substring(0, lastDot);
         alias.methodName = javaClassMethod.substring(lastDot + 1);
         alias.bufferResultSetToLocalTemp = bufferResultSetToLocalTemp;
+        if (precisionJavaClassMethod!=null) {
+            int ld = precisionJavaClassMethod.lastIndexOf('.', paren < 0 ?
+                    precisionJavaClassMethod.length() : paren);
+            if (ld < 0) {
+                throw DbException.get(ErrorCode.SYNTAX_ERROR_1, precisionJavaClassMethod);
+            }
+            alias.precisionClassName = precisionJavaClassMethod.substring(0, ld);
+            alias.precisionMethodName = precisionJavaClassMethod.substring(ld + 1);
+        }
         alias.init(force);
         return alias;
     }
@@ -129,8 +143,8 @@ public class FunctionAlias extends SchemaObjectBase {
             compiler.setSource(fullClassName, source);
             try {
                 Method m = compiler.getMethod(fullClassName);
-                JavaMethod method = new JavaMethod(m, 0);
-                javaMethods = new JavaMethod[] {
+                JavaMethod method = new JavaMethod(m, 0, database);
+                javaMethods = new JavaMethod[]{
                         method
                 };
             } catch (DbException e) {
@@ -152,7 +166,7 @@ public class FunctionAlias extends SchemaObjectBase {
             }
             if (m.getName().equals(methodName) ||
                     getMethodSignature(m).equals(methodName)) {
-                JavaMethod javaMethod = new JavaMethod(m, i);
+                JavaMethod javaMethod = new JavaMethod(m, i, database);
                 for (JavaMethod old : list) {
                     if (old.getParameterCount() == javaMethod.getParameterCount()) {
                         throw DbException.get(ErrorCode.
@@ -175,6 +189,17 @@ public class FunctionAlias extends SchemaObjectBase {
         // with a variable number. The one without parameters needs to be used
         // if no parameters are given.
         Arrays.sort(javaMethods);
+        if (precisionClassName != null) {
+            Class<?> precisionJavaClass = JdbcUtils.loadUserClass(precisionClassName);
+            try {
+                this.precision = precisionJavaClass.getMethod(precisionMethodName, Method.class, Expression[].class);
+            } catch (NoSuchMethodException e) {
+                throw DbException.get(
+                        ErrorCode.PUBLIC_STATIC_JAVA_METHOD_NOT_FOUND_1,
+                        precisionClassName + " (" + precisionMethodName + ")");
+
+            }
+        }
     }
 
     private static String getMethodSignature(Method m) {
@@ -347,10 +372,12 @@ public class FunctionAlias extends SchemaObjectBase {
         private boolean varArgs;
         private Class<?> varArgClass;
         private int paramCount;
+        private final Database database;
 
-        JavaMethod(Method method, int id) {
+        JavaMethod(Method method, int id, Database database) {
             this.method = method;
             this.id = id;
+            this.database = database;
             Class<?>[] paramClasses = method.getParameterTypes();
             paramCount = paramClasses.length;
             if (paramCount > 0) {
@@ -439,7 +466,8 @@ public class FunctionAlias extends SchemaObjectBase {
                     }
                     o = objArray;
                 } else {
-                    v = v.convertTo(type);
+                    Value value = database.convertToUserDefined(v, v.getType(), type);
+                    v = value == null ? v.convertTo(type) : value;
                     o = v.getObject();
                 }
                 if (o == null) {
@@ -537,6 +565,13 @@ public class FunctionAlias extends SchemaObjectBase {
             return id - m.id;
         }
 
+        public Method getMethod() {
+            return method;
+        }
+    }
+
+    public Method getPrecision() {
+        return precision;
     }
 
 }

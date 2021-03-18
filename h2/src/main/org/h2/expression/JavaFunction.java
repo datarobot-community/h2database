@@ -9,6 +9,7 @@ import org.h2.command.Parser;
 import org.h2.engine.Constants;
 import org.h2.engine.FunctionAlias;
 import org.h2.engine.Session;
+import org.h2.message.DbException;
 import org.h2.table.ColumnResolver;
 import org.h2.table.TableFilter;
 import org.h2.util.StatementBuilder;
@@ -16,7 +17,13 @@ import org.h2.value.DataType;
 import org.h2.value.Value;
 import org.h2.value.ValueArray;
 import org.h2.value.ValueNull;
+import org.h2.value.ValueInt;
+import org.h2.value.ValueDouble;
+import org.h2.value.ValueLong;
 import org.h2.value.ValueResultSet;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * This class wraps a user-defined function.
@@ -26,6 +33,7 @@ public class JavaFunction extends Expression implements FunctionCall {
     private final FunctionAlias functionAlias;
     private final FunctionAlias.JavaMethod javaMethod;
     private final Expression[] args;
+    private long precision;
 
     public JavaFunction(FunctionAlias functionAlias, Expression[] args) {
         this.functionAlias = functionAlias;
@@ -58,6 +66,7 @@ public class JavaFunction extends Expression implements FunctionCall {
             args[i] = e;
             allConst &= e.isConstant();
         }
+        precision=optimizePrecision();
         if (allConst) {
             return ValueExpression.get(getValue(session));
         }
@@ -80,12 +89,13 @@ public class JavaFunction extends Expression implements FunctionCall {
 
     @Override
     public long getPrecision() {
-        return Integer.MAX_VALUE;
+        return precision;
     }
 
     @Override
     public int getDisplaySize() {
-        return Integer.MAX_VALUE;
+        long size = getPrecision();
+        return (int) Math.min(size, Integer.MAX_VALUE);
     }
 
     @Override
@@ -185,4 +195,25 @@ public class JavaFunction extends Expression implements FunctionCall {
         return functionAlias.isBufferResultSetToLocalTemp();
     }
 
+    private long optimizePrecision () {
+        Method method = functionAlias.getPrecision();
+        if (method == null) {
+            switch (javaMethod.getDataType()) {
+                case Value.DOUBLE:
+                    return ValueDouble.PRECISION;
+                case Value.LONG:
+                    return ValueLong.PRECISION;
+                case Value.INT:
+                    return ValueInt.PRECISION;
+                default:
+                    return Integer.MAX_VALUE;
+            }
+        } else {
+            try {
+                return (long) method.invoke(null, javaMethod.getMethod(), args);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw DbException.convert(e);
+            }
+        }
+    }
 }

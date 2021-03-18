@@ -7,6 +7,8 @@ package org.h2.engine;
 
 import java.io.Closeable;
 import java.util.ArrayList;
+
+import org.h2.contrib.UdfArgumentConverter;
 import org.h2.command.CommandInterface;
 import org.h2.message.Trace;
 import org.h2.store.DataHandler;
@@ -159,5 +161,7 @@ public interface SessionInterface extends Closeable {
     void setClientContext(Object context);
 
     Object getClientContext();
+
+    void setUdfArgumentConverter(UdfArgumentConverter conversion);
 
 }

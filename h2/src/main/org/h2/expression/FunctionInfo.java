@@ -8,7 +8,7 @@ package org.h2.expression;
 /**
  * This class contains information about a built-in function.
  */
-class FunctionInfo {
+public class FunctionInfo {
 
     /**
      * The name of the function.

@@ -22,6 +22,7 @@ import org.h2.command.ddl.Analyze;
 import org.h2.command.dml.Query;
 import org.h2.command.dml.SetTypes;
 import org.h2.constraint.Constraint;
+import org.h2.contrib.UdfArgumentConverter;
 import org.h2.index.Index;
 import org.h2.index.ViewIndex;
 import org.h2.jdbc.JdbcConnection;
@@ -1767,4 +1768,10 @@ public class Session extends SessionWithState {
     public Object getClientContext() {
         return database.clientContext;
     }
+
+    @Override
+    public void setUdfArgumentConverter(UdfArgumentConverter conversion) {
+        database.setUdfArgumentConverter(conversion);
+    }
+
 }

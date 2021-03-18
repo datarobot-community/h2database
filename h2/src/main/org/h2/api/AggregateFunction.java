@@ -38,6 +38,18 @@ public interface AggregateFunction {
     int getType(int[] inputTypes) throws SQLException;
 
     /**
+     * This method must return the SQL type of the method,
+     * given the SQL type of the input data.
+     * The method should check here if the number of parameters passed is correct,
+     * and if not it should throw an exception.
+     *
+     * @param precisions the SQL type of the parameters
+     * @param longs
+     * @return the SQL type of the result
+     */
+    int getPrecision(int[] precisions, long[] longs) throws SQLException;
+
+    /**
      * This method is called once for each row.
      * If the aggregate function is called with multiple parameters,
      * those are passed as array.

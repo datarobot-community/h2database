@@ -230,4 +230,7 @@ public class ValueTime extends Value {
         }
     }
 
+    public boolean checkPrecision(long precision) {
+        return true;
+    }
 }

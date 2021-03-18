@@ -4871,6 +4871,10 @@ public class Parser {
             read("FOR");
             command.setJavaClassMethod(readUniqueIdentifier());
         }
+        if (readIf("WITH")) {
+            read("PRECISION");
+            command.setPrecisionJavaClassMethod(readUniqueIdentifier());
+        }
         return command;
     }
 

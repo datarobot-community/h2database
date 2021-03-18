@@ -25,6 +25,7 @@ import org.h2.command.CommandInterface;
 import org.h2.command.ddl.CreateTableData;
 import org.h2.command.dml.SetTypes;
 import org.h2.constraint.Constraint;
+import org.h2.contrib.UdfArgumentConverter;
 import org.h2.index.Cursor;
 import org.h2.index.Index;
 import org.h2.index.IndexType;
@@ -204,6 +205,8 @@ public class Database implements DataHandler {
      * client context to be passed to external schemas if required
      */
     public Object clientContext;
+
+    private UdfArgumentConverter udfArgumentConverter;
 
     public Database(ConnectionInfo ci, String cipher) {
         String name = ci.getName();
@@ -2906,4 +2909,12 @@ public class Database implements DataHandler {
         return engine;
     }
 
+    public void setUdfArgumentConverter(UdfArgumentConverter conversion) {
+        this.udfArgumentConverter = conversion;
+    }
+
+    public Value convertToUserDefined(Value value, int fromType, int targetType) {
+        return udfArgumentConverter == null ? null :
+                udfArgumentConverter.convertTo(value, fromType, targetType);
+    }
 }

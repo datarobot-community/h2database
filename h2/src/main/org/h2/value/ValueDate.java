@@ -170,4 +170,8 @@ public class ValueDate extends Value {
         StringUtils.appendZeroPadded(buff, 2, d);
     }
 
+    public boolean checkPrecision(long precision) {
+        return true;
+    }
+
 }

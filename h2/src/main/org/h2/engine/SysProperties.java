@@ -585,4 +585,11 @@ public class SysProperties {
         return Utils.scaleForAvailableMemory(defaultValue);
     }
 
+
+    /**
+     * System property <code>h2.disableGeometry</code> (default: false).<br />
+     * disable attempt to try to load Geometry class saving on one DBException while debugging
+     */
+    public static final boolean DISABLE_GEOMETRY = Utils.getProperty("h2.disableGeometry", false);
+
 }

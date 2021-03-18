@@ -177,12 +177,15 @@ public class DataType {
 
     static {
         Class<?> g;
-        try {
-            g = JdbcUtils.loadUserClass(GEOMETRY_CLASS_NAME);
-        } catch (Exception e) {
-            // class is not in the classpath - ignore
+        if (SysProperties.DISABLE_GEOMETRY) {
             g = null;
-        }
+        } else
+            try {
+                g = JdbcUtils.loadUserClass(GEOMETRY_CLASS_NAME);
+            } catch (Exception e) {
+                // class is not in the classpath - ignore
+                g = null;
+            }
         GEOMETRY_CLASS = g;
     }
 

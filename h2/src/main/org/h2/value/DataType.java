@@ -834,10 +834,26 @@ public class DataType {
     public static int convertSQLTypeToValueType(int sqlType, String sqlTypeName) {
         switch (sqlType) {
             case Types.OTHER:
+                if (sqlTypeName.equalsIgnoreCase("NCLOB")) {
+                    // Oracle 11.2 client
+                    return Value.CLOB;
+                }
+                // fallback to the next case for Geometry type
             case Types.JAVA_OBJECT:
                 if (sqlTypeName.equalsIgnoreCase("geometry")) {
                     return Value.GEOMETRY;
                 }
+                break;
+            case 100:
+                if (sqlTypeName.equalsIgnoreCase("BINARY_FLOAT")) {
+                    return Value.DOUBLE;
+                }
+                break;
+            case 101:
+                if (sqlTypeName.equalsIgnoreCase("BINARY_DOUBLE")) {
+                    return Value.DOUBLE;
+                }
+                break;
         }
         return convertSQLTypeToValueType(sqlType);
     }

@@ -3939,6 +3939,8 @@ public class Parser {
 
     private static int getSaveTokenType(String s, boolean supportOffsetFetch) {
         switch (s.charAt(0)) {
+        case 'A':
+            return getKeywordOrIdentifier(s, "ALL", KEYWORD);
         case 'C':
             if (s.equals("CHECK")) {
                 return KEYWORD;
@@ -4018,6 +4020,8 @@ public class Parser {
         case 'T':
             if ("TODAY".equals(s)) {
                 return CURRENT_DATE;
+            } else if (s.equals("TOP")) {
+                return KEYWORD;
             }
             return getKeywordOrIdentifier(s, "TRUE", TRUE);
         case 'U':
@@ -4358,7 +4362,7 @@ public class Parser {
         if (readIf("VIEW")) {
             return parseCreateView(force, orReplace);
         } else if (readIf("ALIAS")) {
-            return parseCreateFunctionAlias(force);
+             return parseCreateFunctionAlias(force);
         } else if (readIf("SEQUENCE")) {
             return parseCreateSequence();
         } else if (readIf("USER")) {

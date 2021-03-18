@@ -500,7 +500,7 @@ public class SelectUnion extends Query {
         boolean rightDone;
 
         LazyResultUnion(Expression[] expressions, int columnCount) {
-            super(expressions);
+            super(expressions, sqlStatement);
             this.columnCount = columnCount;
         }
 

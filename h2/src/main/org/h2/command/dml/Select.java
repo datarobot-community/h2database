@@ -1441,7 +1441,7 @@ public class Select extends Query {
         int columnCount;
 
         LazyResultSelect(Expression[] expressions, int columnCount) {
-            super(expressions);
+            super(expressions, sqlStatement);
             this.columnCount = columnCount;
             setCurrentRowNumber(0);
         }

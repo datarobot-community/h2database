@@ -18,6 +18,7 @@ import org.h2.value.Value;
 public abstract class LazyResult implements ResultInterface {
 
     private Expression[] expressions;
+    private final String sql;
     private int rowId = -1;
     private Value[] currentRow;
     private Value[] nextRow;
@@ -25,8 +26,9 @@ public abstract class LazyResult implements ResultInterface {
     private boolean afterLast;
     private int limit;
 
-    public LazyResult(Expression[] expressions) {
+    public LazyResult(Expression[] expressions, String sql) {
         this.expressions = expressions;
+        this.sql = sql;
     }
 
     public void setLimit(int limit) {
@@ -72,13 +74,19 @@ public abstract class LazyResult implements ResultInterface {
 
     @Override
     public boolean hasNext() {
-        if (closed || afterLast) {
-            return false;
+        try {
+            if (closed || afterLast) {
+                return false;
+            }
+            if (nextRow == null && (limit <= 0 || rowId + 1 < limit)) {
+                nextRow = fetchNextRow();
+            }
+            return nextRow != null;
+        } catch (DbException e) {
+            if (sql != null)
+                e.addSQL(sql);
+            throw e;
         }
-        if (nextRow == null && (limit <= 0 || rowId + 1 < limit)) {
-            nextRow = fetchNextRow();
-        }
-        return nextRow != null;
     }
 
     /**

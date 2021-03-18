@@ -349,7 +349,7 @@ public class LocalResult implements ResultInterface, ResultTarget {
     public void done() {
         if (distinct) {
             if (distinctRows != null) {
-                rows = distinctRows.values();
+                rows = new ArrayList<>(distinctRows.values());
             } else {
                 if (external != null && sort != null) {
                     // external sort

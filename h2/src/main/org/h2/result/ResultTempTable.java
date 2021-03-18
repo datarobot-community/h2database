@@ -7,6 +7,8 @@ package org.h2.result;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+
 import org.h2.command.ddl.CreateTableData;
 import org.h2.engine.Constants;
 import org.h2.engine.Database;
@@ -162,10 +164,12 @@ public class ResultTempTable implements ResultExternal {
     }
 
     @Override
-    public int addRows(ArrayList<Value[]> rows) {
+    public int addRows(Collection<Value[]> rows) {
         // speeds up inserting, but not really needed:
         if (sort != null) {
-            sort.sort(rows);
+            ArrayList<Value[]> copy = new ArrayList<>(rows);
+            sort.sort(copy);
+            rows = copy;
         }
         for (Value[] values : rows) {
             addRow(values);

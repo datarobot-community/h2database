@@ -5,7 +5,8 @@
  */
 package org.h2.result;
 
-import java.util.ArrayList;
+import java.util.Collection;
+
 import org.h2.value.Value;
 
 /**
@@ -40,7 +41,7 @@ public interface ResultExternal {
      * @param rows the list of rows to add
      * @return the new number of rows in this object
      */
-    int addRows(ArrayList<Value[]> rows);
+    int addRows(Collection<Value[]> rows);
 
     /**
      * This method is called after all rows have been added.

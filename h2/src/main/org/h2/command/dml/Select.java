@@ -348,7 +348,7 @@ public class Select extends Query {
         if (groupIndex == null && groups.size() == 0) {
             groups.put(defaultGroup, new HashMap<Expression, Object>());
         }
-        ArrayList<Value> keys = groups.keys();
+        java.util.Set<Value> keys = groups.keys();
         for (Value v : keys) {
             ValueArray key = (ValueArray) v;
             currentGroup = groups.get(key);

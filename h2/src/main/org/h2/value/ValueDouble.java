@@ -38,8 +38,19 @@ public class ValueDouble extends Value {
 
     private final double value;
 
+    /**
+     * If value is converted from another type, keep the reference to the original value here
+     */
+    public final Value reference;
+
     private ValueDouble(double value) {
         this.value = value;
+        this.reference = null;
+    }
+
+    private ValueDouble(double value, Value reference) {
+        this.value = value;
+        this.reference = reference;
     }
 
     @Override
@@ -164,6 +175,15 @@ public class ValueDouble extends Value {
             return NAN;
         }
         return (ValueDouble) Value.cache(new ValueDouble(d));
+    }
+
+    public static ValueDouble get(double d, Value extension) {
+        if (Double.isNaN(d))
+            return NAN;
+        else {
+            // do not keep in the cache
+            return new ValueDouble(d, extension);
+        }
     }
 
     @Override

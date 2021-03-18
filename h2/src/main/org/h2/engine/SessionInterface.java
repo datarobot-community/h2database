@@ -6,10 +6,14 @@
 package org.h2.engine;
 
 import java.io.Closeable;
+import java.sql.Connection;
 import java.sql.SQLWarning;
 import java.util.ArrayList;
 
 import org.h2.contrib.UdfArgumentConverter;
+import org.h2.contrib.link.TableLinkColumnHandlerFactory;
+import org.h2.contrib.link.LinkedIndexResolver;
+import org.h2.contrib.link.LinkedQueryExecutionReporter;
 import org.h2.command.CommandInterface;
 import org.h2.message.Trace;
 import org.h2.store.DataHandler;
@@ -169,4 +173,13 @@ public interface SessionInterface extends Closeable {
 
     void setUdfArgumentConverter(UdfArgumentConverter conversion);
 
+    void setTableLinkColumnHandlerFactory(TableLinkColumnHandlerFactory tableLinkColumnHandlerFactory);
+
+    void addLinkedConnection(String connectionName, Connection connection);
+
+    void removeLinkedConnection(String connectionName);
+
+    void addLinkedIndexResolver(String connectionName, LinkedIndexResolver indexResolver);
+
+    void addLinkedQueryExecutionReporter(LinkedQueryExecutionReporter reporter);
 }

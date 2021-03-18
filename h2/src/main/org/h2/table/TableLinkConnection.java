@@ -17,7 +17,7 @@ import org.h2.util.Utils;
  * A connection for a linked table. The same connection may be used for multiple
  * tables, that means a connection may be shared.
  */
-public class TableLinkConnection {
+public class TableLinkConnection implements BaseTableLinkConnection {
 
     /**
      * The map where the link is kept.
@@ -120,7 +120,7 @@ public class TableLinkConnection {
      *
      * @return the connection
      */
-    Connection getConnection() {
+    public Connection getConnection() {
         return conn;
     }
 
@@ -130,7 +130,7 @@ public class TableLinkConnection {
      * @param force if the connection needs to be closed even if it is still
      *            used elsewhere (for example, because the connection is broken)
      */
-    void close(boolean force) {
+    public void close(boolean force) {
         boolean actuallyClose = false;
         synchronized (map) {
             if (--useCounter <= 0 || force) {

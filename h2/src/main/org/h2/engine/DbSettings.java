@@ -357,6 +357,12 @@ public class DbSettings extends SettingsBase {
      */
     public final boolean multiThreaded = get("MULTI_THREADED", false);
 
+    /**
+     * Database setting <code>LINK_FETCH_SIZE</code>
+     * (default: 0).<br />
+     */
+    public final int linkFetchSize= get("LINK_FETCH_SIZE", 0);
+
     private DbSettings(HashMap<String, String> s) {
         super(s);
     }

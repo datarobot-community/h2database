@@ -1997,6 +1997,12 @@ public class ErrorCode {
     // next are 90110, 90122, 90144
 
     /**
+     * The error with code <code>90122</code> is thrown when
+     * trying to altering, adding or dropping columns of a linked view.
+     */
+    public static final int OPERATION_NOT_SUPPORTED_WITH_LINKED_VIEW = 90800;
+
+    /**
      * The error with code <code>99003</code> is thrown when
      * trying to delete or update a read only table in the external schema
      */
@@ -2008,6 +2014,11 @@ public class ErrorCode {
      */
     public static final int TABLE_IS_INSERT_ONLY = 99004;
 
+    /**
+     * The error with code <code>99004</code> is thrown when
+     * trying to accees table from linked schema with undefined connection
+     */
+    public static final int EXTERNAL_CONNECTION_NOT_FOUND = 99005;
 
     private ErrorCode() {
         // utility class

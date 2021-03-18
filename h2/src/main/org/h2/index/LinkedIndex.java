@@ -7,8 +7,11 @@ package org.h2.index;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
+
+import org.h2.api.ErrorCode;
 import org.h2.engine.Constants;
 import org.h2.engine.Session;
 import org.h2.message.DbException;
@@ -33,11 +36,15 @@ public class LinkedIndex extends BaseIndex {
     private final TableLink link;
     private final String targetTableName;
     private long rowCount;
+    private boolean view;
+    private final List<TableLink.ColumnLinkMetaData> columnLinkMetaData;
 
     public LinkedIndex(TableLink table, int id, IndexColumn[] columns,
-            IndexType indexType) {
+                       IndexType indexType, List<TableLink.ColumnLinkMetaData> columnLinkMetaData) {
         initBaseIndex(table, id, null, columns, indexType);
         link = table;
+        view=link.isView();
+        this.columnLinkMetaData = columnLinkMetaData;
         targetTableName = link.getQualifiedTable();
     }
 
@@ -57,9 +64,14 @@ public class LinkedIndex extends BaseIndex {
 
     @Override
     public void add(Session session, Row row) {
+        if (view)
+            throw DbException.get(ErrorCode.OPERATION_NOT_SUPPORTED_WITH_LINKED_VIEW,
+                    table.getName());
+
         ArrayList<Value> params = New.arrayList();
         StatementBuilder buff = new StatementBuilder("INSERT INTO ");
         buff.append(targetTableName).append(" VALUES(");
+        List<TableLink.ColumnLinkMetaData> paramMetaData = New.arrayList();
         for (int i = 0; i < row.getColumnCount(); i++) {
             Value v = row.getValue(i);
             buff.appendExceptFirst(", ");
@@ -70,12 +82,13 @@ public class LinkedIndex extends BaseIndex {
             } else {
                 buff.append('?');
                 params.add(v);
+                paramMetaData.add(columnLinkMetaData.get(i));
             }
         }
         buff.append(')');
         String sql = buff.toString();
         try {
-            link.execute(sql, params, true);
+            link.execute(sql, params, true, paramMetaData);
             rowCount++;
         } catch (Exception e) {
             throw TableLink.wrapException(sql, e);
@@ -85,8 +98,10 @@ public class LinkedIndex extends BaseIndex {
     @Override
     public Cursor find(Session session, SearchRow first, SearchRow last) {
         ArrayList<Value> params = New.arrayList();
-        StatementBuilder buff = new StatementBuilder("SELECT * FROM ");
-        buff.append(targetTableName).append(" T");
+        StatementBuilder buff = new StatementBuilder(view ?
+                targetTableName :
+                "SELECT * FROM " + targetTableName + " T");
+        List<TableLink.ColumnLinkMetaData> paramMetaData = New.arrayList();
         for (int i = 0; first != null && i < first.getColumnCount(); i++) {
             Value v = first.getValue(i);
             if (v != null) {
@@ -100,6 +115,7 @@ public class LinkedIndex extends BaseIndex {
                     buff.append(">=");
                     addParameter(buff, col);
                     params.add(v);
+                    paramMetaData.add(columnLinkMetaData.get(i));
                 }
             }
         }
@@ -116,12 +132,13 @@ public class LinkedIndex extends BaseIndex {
                     buff.append("<=");
                     addParameter(buff, col);
                     params.add(v);
+                    paramMetaData.add(columnLinkMetaData.get(i));
                 }
             }
         }
         String sql = buff.toString();
         try {
-            PreparedStatement prep = link.execute(sql, params, false);
+            PreparedStatement prep = link.execute(sql, params, false, paramMetaData);
             ResultSet rs = prep.getResultSet();
             return new LinkedCursor(link, rs, session, sql, prep);
         } catch (Exception e) {
@@ -145,6 +162,11 @@ public class LinkedIndex extends BaseIndex {
     public double getCost(Session session, int[] masks,
             TableFilter[] filters, int filter, SortOrder sortOrder,
             HashSet<Column> allColumnsSet) {
+
+        long precalculatedRowCount = link.getPrecalculatedRowCount();
+        if (precalculatedRowCount > 0) return 10 * getCostRangeIndex(masks, precalculatedRowCount,
+                filters, filter, sortOrder, true, allColumnsSet);
+
         return 100 + getCostRangeIndex(masks, rowCount +
                 Constants.COST_ROW_OFFSET, filters, filter, sortOrder, false, allColumnsSet);
     }
@@ -183,7 +205,11 @@ public class LinkedIndex extends BaseIndex {
 
     @Override
     public void remove(Session session, Row row) {
+        if (view)
+            throw DbException.get(ErrorCode.OPERATION_NOT_SUPPORTED_WITH_LINKED_VIEW,
+                    table.getName(), null);
         ArrayList<Value> params = New.arrayList();
+        List<TableLink.ColumnLinkMetaData> paramMetaData = New.arrayList();
         StatementBuilder buff = new StatementBuilder("DELETE FROM ");
         buff.append(targetTableName).append(" WHERE ");
         for (int i = 0; i < row.getColumnCount(); i++) {
@@ -197,12 +223,13 @@ public class LinkedIndex extends BaseIndex {
                 buff.append('=');
                 addParameter(buff, col);
                 params.add(v);
+                paramMetaData.add(columnLinkMetaData.get(i));
                 buff.append(' ');
             }
         }
         String sql = buff.toString();
         try {
-            PreparedStatement prep = link.execute(sql, params, false);
+            PreparedStatement prep = link.execute(sql, params, false, paramMetaData);
             int count = prep.executeUpdate();
             link.reusePreparedStatement(prep, sql);
             rowCount -= count;
@@ -219,7 +246,11 @@ public class LinkedIndex extends BaseIndex {
      * @param newRow the new data
      */
     public void update(Row oldRow, Row newRow) {
+        if (view)
+            throw DbException.get(ErrorCode.OPERATION_NOT_SUPPORTED_WITH_LINKED_VIEW,
+                    table.getName(), null);
         ArrayList<Value> params = New.arrayList();
+        List<TableLink.ColumnLinkMetaData> paramsMetaData = New.arrayList();
         StatementBuilder buff = new StatementBuilder("UPDATE ");
         buff.append(targetTableName).append(" SET ");
         for (int i = 0; i < newRow.getColumnCount(); i++) {
@@ -231,6 +262,7 @@ public class LinkedIndex extends BaseIndex {
             } else {
                 buff.append('?');
                 params.add(v);
+                paramsMetaData.add(columnLinkMetaData.get(i));
             }
         }
         buff.append(" WHERE ");
@@ -245,12 +277,13 @@ public class LinkedIndex extends BaseIndex {
             } else {
                 buff.append('=');
                 params.add(v);
+                paramsMetaData.add(columnLinkMetaData.get(i));
                 addParameter(buff, col);
             }
         }
         String sql = buff.toString();
         try {
-            link.execute(sql, params, true);
+            link.execute(sql, params, true, paramsMetaData);
         } catch (Exception e) {
             throw TableLink.wrapException(sql, e);
         }

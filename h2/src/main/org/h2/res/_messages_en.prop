@@ -178,3 +178,4 @@ HYC00=Feature not supported: {0}
 HYT00=Timeout trying to lock table {0}
 99003=The table {0} is opened in READ ONLY mode.
 99004=Can not execute query on table {0} with uncommitted data. Execute COMMIT first.
+99005=External connection {0} not defined.

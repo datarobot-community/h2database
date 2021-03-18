@@ -14,6 +14,7 @@ import org.h2.engine.User;
 import org.h2.message.DbException;
 import org.h2.schema.Schema;
 import org.h2.schema.SchemaFactory;
+import org.h2.schema.SchemaLink;
 
 /**
  * This class represents the statement
@@ -26,6 +27,9 @@ public class CreateSchema extends DefineCommand {
     private boolean ifNotExists;
     private ArrayList<String> tableEngineParams;
     private String external;
+    private String externalConnectionName;
+    private boolean linked;
+    private String original;
     private String externalParameters;
 
     public CreateSchema(Session session, boolean force) {
@@ -59,6 +63,8 @@ public class CreateSchema extends DefineCommand {
             // silently dropped and all objects from this schema will not be available
             // also will need to drop all derived objects
             schema = createExternalSchema(db, id, user);
+        } else if (linked) {
+            schema = new SchemaLink(db, id, schemaName, user, externalConnectionName, original);
         } else
             schema = new Schema(db, id, schemaName, user, false);
         schema.setTableEngineParams(tableEngineParams);
@@ -99,6 +105,13 @@ public class CreateSchema extends DefineCommand {
 
     public void setExternal(String external) {
         this.external = external;
+    }
+
+    public void setLinked(String externalConnectionName, String original) {
+        this.original = original;
+
+        linked = true;
+        this.externalConnectionName = externalConnectionName;
     }
 
     public void setExternalParameters(String externalParameters) {

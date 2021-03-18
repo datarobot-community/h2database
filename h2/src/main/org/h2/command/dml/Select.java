@@ -740,7 +740,7 @@ public class Select extends Query {
             for (int i = 0; i < visibleColumnCount; i++) {
                 Expression expr = expressions.get(i);
                 expr = expr.getNonAliasExpression();
-                String sql = expr.getSQL();
+                String sql = expr.getSQL(true);
                 expressionSQL.add(sql);
             }
         } else {
@@ -1091,7 +1091,7 @@ public class Select extends Query {
         for (int i = 0; i < visibleColumnCount; i++) {
             buff.appendExceptFirst(",");
             buff.append('\n');
-            buff.append(StringUtils.indent(exprList[i].getSQL(), 4, false));
+            buff.append(StringUtils.indent(exprList[i].getSQL(true), 4, false));
         }
         buff.append("\nFROM ");
         TableFilter filter = topTableFilter;

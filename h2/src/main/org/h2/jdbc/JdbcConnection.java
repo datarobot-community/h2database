@@ -33,9 +33,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
+
+import org.h2.contrib.UdfArgumentConverter;
+import org.h2.contrib.link.LinkedIndexResolver;
+import org.h2.contrib.link.LinkedQueryExecutionReporter;
 import org.h2.api.ErrorCode;
 import org.h2.command.CommandInterface;
-import org.h2.contrib.UdfArgumentConverter;
 import org.h2.engine.ConnectionInfo;
 import org.h2.engine.Constants;
 import org.h2.engine.Mode;
@@ -2066,4 +2069,19 @@ public class JdbcConnection extends TraceObject implements Connection,
         session.setUdfArgumentConverter(conversion);
     }
 
+    public void addExternalConnection(String connectionName, Connection connection) {
+        session.addLinkedConnection(connectionName, connection);
+    }
+
+    public void removeExternalConnection(String connectionName) {
+        session.removeLinkedConnection(connectionName);
+    }
+
+    public void addExternalIndexResolver(String connectionName, LinkedIndexResolver indexResolver) {
+        session.addLinkedIndexResolver(connectionName, indexResolver);
+    }
+
+    public void addLinkedQueryExecutionReporter(LinkedQueryExecutionReporter reporter) {
+        session.addLinkedQueryExecutionReporter(reporter);
+    }
 }

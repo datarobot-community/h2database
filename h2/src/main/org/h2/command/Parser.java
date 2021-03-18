@@ -4663,6 +4663,14 @@ public class Parser {
             command.setExternalParameters(readString());
             read(")");
         }
+        else if(readIf("LINKED")) {
+            read("(");
+            String externalConnectionName=readString();
+            read(",");
+            String original =readString();
+            command.setLinked(externalConnectionName,original);
+            read(")");
+        }
         return command;
     }
 
@@ -6145,24 +6153,39 @@ public class Parser {
 
     private CreateLinkedTable parseCreateLinkedTable(boolean temp,
             boolean globalTemp, boolean force) {
-        read("TABLE");
+        boolean isQuery =false;
+        if (readIf("VIEW")) {
+            isQuery=true;
+        } else
+            read("TABLE");
         boolean ifNotExists = readIfNotExists();
         String tableName = readIdentifierWithSchema();
-        CreateLinkedTable command = new CreateLinkedTable(session, getSchema());
+        CreateLinkedTable command = new CreateLinkedTable(session, getSchema(), isQuery);
         command.setTemporary(temp);
         command.setGlobalTemporary(globalTemp);
         command.setForce(force);
         command.setIfNotExists(ifNotExists);
         command.setTableName(tableName);
         command.setComment(readCommentIf());
+        boolean externalConnection=false;
+        if (readIf("WITH")) {
+            externalConnection = true;
+            read("EXTERNAL");
+            read("CONNECTION");
+        }
         read("(");
-        command.setDriver(readString());
-        read(",");
-        command.setUrl(readString());
-        read(",");
-        command.setUser(readString());
-        read(",");
-        command.setPassword(readString());
+        if (externalConnection) {
+            command.setExternalConnectionName(readString());
+        }
+        else {
+            command.setDriver(readString());
+            read(",");
+            command.setUrl(readString());
+            read(",");
+            command.setUser(readString());
+            read(",");
+            command.setPassword(readString());
+        }
         read(",");
         String originalTable = readString();
         if (readIf(",")) {

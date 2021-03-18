@@ -8,7 +8,12 @@ package org.h2.engine;
 import java.io.IOException;
 import java.net.Socket;
 import java.sql.SQLWarning;
+import java.sql.Connection;
 import java.util.ArrayList;
+
+import org.h2.contrib.link.TableLinkColumnHandlerFactory;
+import org.h2.contrib.link.LinkedIndexResolver;
+import org.h2.contrib.link.LinkedQueryExecutionReporter;
 import org.h2.api.DatabaseEventListener;
 import org.h2.api.ErrorCode;
 import org.h2.api.JavaObjectSerializer;
@@ -900,4 +905,27 @@ public class SessionRemote extends SessionWithState implements DataHandler {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void setTableLinkColumnHandlerFactory(TableLinkColumnHandlerFactory tableLinkColumnHandlerFactory) {
+    }
+
+    public void addLinkedConnection(String connectionName,
+                                    Connection connection) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void removeLinkedConnection(String connectionName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void addLinkedIndexResolver(String connectionName, LinkedIndexResolver indexResolver) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void addLinkedQueryExecutionReporter(LinkedQueryExecutionReporter reporter) {
+        throw new UnsupportedOperationException();
+    }
 }

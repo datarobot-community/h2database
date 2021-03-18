@@ -5,6 +5,8 @@
  */
 package org.h2.engine;
 
+import java.sql.Connection;
+import java.sql.SQLWarning;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,7 +17,9 @@ import java.util.Random;
 import java.util.Deque;
 import java.util.ArrayDeque;
 import java.util.concurrent.TimeUnit;
-import java.sql.SQLWarning;
+import org.h2.contrib.link.TableLinkColumnHandlerFactory;
+import org.h2.contrib.link.LinkedIndexResolver;
+import org.h2.contrib.link.LinkedQueryExecutionReporter;
 import org.h2.api.ErrorCode;
 import org.h2.command.Command;
 import org.h2.command.CommandInterface;
@@ -1804,4 +1808,27 @@ public class Session extends SessionWithState {
         database.setUdfArgumentConverter(conversion);
     }
 
+    @Override
+    public void setTableLinkColumnHandlerFactory(TableLinkColumnHandlerFactory tableLinkColumnHandlerFactory) {
+        database.tableLinkSupport.tableLinkColumnHandlerFactory = tableLinkColumnHandlerFactory;
+    }
+
+    public void addLinkedConnection(String connectionName,
+                                    Connection connection) {
+        database.tableLinkSupport.addLinkedConnection(connectionName, connection);
+    }
+
+    @Override
+    public void removeLinkedConnection(String connectionName) {
+        database.tableLinkSupport.removeLinkedConnection(connectionName);
+    }
+
+    @Override
+    public void addLinkedIndexResolver(String connectionName, LinkedIndexResolver indexResolver) {
+        database.tableLinkSupport.addLinkedIndexResolver(connectionName, indexResolver);
+    }
+
+    public void addLinkedQueryExecutionReporter(LinkedQueryExecutionReporter linkedQueryExecutionReporter) {
+        database.tableLinkSupport.setLinkedQueryExecutionReporter(linkedQueryExecutionReporter);
+    }
 }

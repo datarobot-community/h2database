@@ -226,9 +226,17 @@ public class Parser {
     private int orderInFrom;
     private ArrayList<Parameter> suppliedParameterList;
 
+    /**
+     * @see org.h2.engine.DbSettings#mixedCase
+     */
+    private final boolean mixedCase;
+    private String currentTokenMixedCase;
+    private String columnNameMixedCase;
+
     public Parser(Session session) {
         this.database = session.getDatabase();
         this.identifiersToUpper = database.getSettings().databaseToUpper;
+        this.mixedCase = database.getSettings().mixedCase;
         this.session = session;
     }
 
@@ -2063,11 +2071,18 @@ public class Parser {
                 expressions.add(new Wildcard(null, null));
             } else {
                 Expression expr = readExpression();
+                String ex = readExtensionIf();
                 if (readIf("AS") || currentTokenType == IDENTIFIER) {
                     String alias = readAliasIdentifier();
+                    String mixed = columnNameMixedCase;
                     boolean aliasColumnName = database.getSettings().aliasColumnName;
                     aliasColumnName |= database.getMode().aliasColumnName;
-                    expr = new Alias(expr, alias, aliasColumnName);
+                    Alias a = new Alias(expr, alias, mixed, aliasColumnName);
+                    expr = a;
+                    a.setColumnMetaExtension(readExtensionIf());
+                }
+                else {
+                    expr.setColumnMetaExtension(ex);
                 }
                 expressions.add(expr);
             }
@@ -3260,6 +3275,7 @@ public class Parser {
                     "identifier");
         }
         String s = currentToken;
+        columnNameMixedCase=mixedCase ? currentTokenMixedCase:null;
         read();
         return s;
     }
@@ -3310,6 +3326,7 @@ public class Parser {
 
     private void read() {
         currentTokenQuoted = false;
+        currentTokenMixedCase = null;
         if (expectedList != null) {
             expectedList.clear();
         }
@@ -3333,6 +3350,8 @@ public class Parser {
                 }
                 i++;
             }
+            currentTokenMixedCase = StringUtils.cache(originalSQL.substring(
+                    start, i));
             currentToken = StringUtils.cache(sqlCommand.substring(
                     start, i));
             currentTokenType = getTokenType(currentToken);
@@ -3376,13 +3395,14 @@ public class Parser {
             parseIndex = i;
             return;
         case CHAR_VALUE:
-            if (c == '0' && chars[i] == 'X') {
+            if (c == '0' && chars[i] == 'X' || chars[i] == 'x'  ) {
                 // hex number
                 long number = 0;
                 start += 2;
                 i++;
                 while (true) {
                     c = chars[i];
+                    c=Character.toUpperCase(c);
                     if ((c < '0' || c > '9') && (c < 'A' || c > 'F')) {
                         checkLiterals(false);
                         currentValue = ValueInt.get((int) number);
@@ -3403,6 +3423,7 @@ public class Parser {
             long number = c - '0';
             while (true) {
                 c = chars[i];
+                c=Character.toUpperCase(c);
                 if (c < '0' || c > '9') {
                     if (c == '.' || c == 'E' || c == 'L') {
                         readDecimal(start, i);
@@ -3498,6 +3519,7 @@ public class Parser {
         char c;
         do {
             c = chars[++i];
+            c = Character.toUpperCase(c);
         } while ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F'));
         parseIndex = i;
         String sub = sqlCommand.substring(start, i);
@@ -4002,6 +4024,7 @@ public class Parser {
 
     private Column parseColumnForTable(String columnName,
             boolean defaultNullable) {
+        String mixedCaseName=columnNameMixedCase;
         Column column;
         boolean isIdentity = false;
         if (readIf("IDENTITY") || readIf("BIGSERIAL")) {
@@ -4101,6 +4124,8 @@ public class Parser {
         if (comment != null) {
             column.setComment(comment);
         }
+        column.setMetaExtension(readExtensionIf());
+        column.setMixedCaseName(mixedCaseName);
         return column;
     }
 
@@ -4122,6 +4147,13 @@ public class Parser {
             return readString();
         }
         return null;
+    }
+
+    private String readExtensionIf() {
+        if (readIf("EXTENSION")) {
+            return readString();
+        } else
+            return null;
     }
 
     private Column parseColumnWithType(String columnName) {

@@ -65,7 +65,7 @@ public class JdbcResultSetMetaData extends TraceObject implements
         try {
             debugCodeCall("getColumnLabel", column);
             checkColumnIndex(column);
-            return result.getAlias(--column);
+            return result.getColumnLabel(--column);
         } catch (Exception e) {
             throw logAndConvert(e);
         }
@@ -486,4 +486,13 @@ public class JdbcResultSetMetaData extends TraceObject implements
         return getTraceObjectName() + ": columns=" + columnCount;
     }
 
+    public String getColumnMetaExtension(int column) throws SQLException {
+        try {
+            debugCodeCall("getExtension", column);
+            checkColumnIndex(column);
+            return result.getColumnMetaExtension(--column);
+        } catch (Exception e) {
+            throw logAndConvert(e);
+        }
+    }
 }

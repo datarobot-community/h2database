@@ -286,4 +286,14 @@ public class ResultRemote implements ResultInterface {
         // We should never do this on remote result.
         throw DbException.throwInternalError();
     }
+
+    public String getColumnMetaExtension(int i) {
+        return null;
+    }
+
+    @Override
+    public String getColumnLabel(int i) {
+        return columns[i].alias;
+    }
+
 }

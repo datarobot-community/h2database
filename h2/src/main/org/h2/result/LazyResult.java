@@ -135,7 +135,8 @@ public abstract class LazyResult implements ResultInterface {
 
     @Override
     public String getColumnName(int i) {
-        return expressions[i].getColumnName();
+        String mixed = expressions[i].getMixedCaseName();
+        return mixed != null ? mixed : expressions[i].getColumnName();
     }
 
     @Override
@@ -191,5 +192,15 @@ public abstract class LazyResult implements ResultInterface {
         // evaluation when this call is needed:
         // WHERE x IN (SELECT ...).
         throw DbException.throwInternalError();
+    }
+
+    @Override
+    public String getColumnMetaExtension(int i) {
+        return expressions[i].getColumnMetaExtension();
+    }
+
+    @Override
+    public String getColumnLabel(int i) {
+        return expressions[i].getColumnLabel();
     }
 }

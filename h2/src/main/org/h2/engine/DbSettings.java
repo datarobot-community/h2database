@@ -64,6 +64,13 @@ public class DbSettings extends SettingsBase {
     public final boolean databaseToUpper = get("DATABASE_TO_UPPER", true);
 
     /**
+     * Database setting <code>MIXED_CASE</code> (default: false).<br />
+     * Column and table names are kept with mixed case internally inn the database.
+     * non case sensitive but case preserving.
+     */
+    public final boolean mixedCase = get("MIXED_CASE", false);
+
+    /**
      * Database setting <code>DB_CLOSE_ON_EXIT</code> (default: true).<br />
      * Close the database when the virtual machine exits normally, using a
      * shutdown hook.

@@ -454,7 +454,8 @@ public class LocalResult implements ResultInterface, ResultTarget {
 
     @Override
     public String getColumnName(int i) {
-        return expressions[i].getColumnName();
+        String mixed = expressions[i].getMixedCaseName();
+        return mixed != null ? mixed : expressions[i].getColumnName();
     }
 
     @Override
@@ -539,6 +540,15 @@ public class LocalResult implements ResultInterface, ResultTarget {
     @Override
     public void setFetchSize(int fetchSize) {
         // ignore
+    }
+
+    public String getColumnMetaExtension(int i) {
+        return expressions[i].getColumnMetaExtension();
+    }
+
+    @Override
+    public String getColumnLabel(int i) {
+        return expressions[i].getColumnLabel();
     }
 
 }

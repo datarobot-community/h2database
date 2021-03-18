@@ -9,6 +9,7 @@ import org.h2.command.Parser;
 import org.h2.engine.Session;
 import org.h2.table.ColumnResolver;
 import org.h2.table.TableFilter;
+import org.h2.util.StringUtils;
 import org.h2.value.Value;
 
 /**
@@ -20,9 +21,14 @@ public class Alias extends Expression {
     private Expression expr;
     private final boolean aliasColumnName;
 
-    public Alias(Expression expression, String alias, boolean aliasColumnName) {
+    private final String mixedCase;
+    private String extension;
+    private boolean mapped;
+
+    public Alias(Expression expression, String alias, String mixedCase, boolean aliasColumnName) {
         this.expr = expression;
         this.alias = alias;
+        this.mixedCase = mixedCase;
         this.aliasColumnName = aliasColumnName;
     }
 
@@ -43,6 +49,7 @@ public class Alias extends Expression {
 
     @Override
     public void mapColumns(ColumnResolver resolver, int level) {
+        mapped=true;
         expr.mapColumns(resolver, level);
     }
 
@@ -79,7 +86,8 @@ public class Alias extends Expression {
 
     @Override
     public String getSQL() {
-        return expr.getSQL() + " AS " + Parser.quoteIdentifier(alias);
+        return expr.getSQL() + " AS " + (mixedCase != null ? mixedCase : Parser.quoteIdentifier(alias))
+                + (extension == null ? "" : " EXTENSION " + StringUtils.quoteStringSQL(extension));
     }
 
     @Override
@@ -123,4 +131,20 @@ public class Alias extends Expression {
         return expr.getColumnName();
     }
 
+    public String getColumnMetaExtension() {
+        String e = expr.getColumnMetaExtension();
+        return extension == null ? e : e == null ? extension : e + extension;
+    }
+
+    public String getMixedCaseName() {
+        return mixedCase;
+    }
+
+    public void setColumnMetaExtension(String columnMetaExtension) {
+        this.extension = columnMetaExtension;
+    }
+
+    public boolean isMapped() {
+        return mapped;
+    }
 }

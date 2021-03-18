@@ -92,6 +92,8 @@ public class Column {
     private boolean primaryKey;
     private boolean visible = true;
 
+    private String metaExtension;
+
     public Column(String name, int type) {
         this(name, type, -1, -1, -1, null);
     }
@@ -462,7 +464,7 @@ public class Column {
     public String getCreateSQL() {
         StringBuilder buff = new StringBuilder();
         if (name != null) {
-            buff.append(Parser.quoteIdentifier(name)).append(' ');
+            buff.append(mixedCaseName != null ? mixedCaseName : Parser.quoteIdentifier(name)).append(' ');
         }
         if (originalSQL != null) {
             buff.append(originalSQL);
@@ -524,6 +526,11 @@ public class Column {
         }
         if (checkConstraint != null) {
             buff.append(" CHECK ").append(checkConstraintSQL);
+        }
+        if (metaExtension != null) {
+            buff.append(" EXTENSION ");
+            buff.append(" ");
+            buff.append(StringUtils.quoteStringSQL(metaExtension));
         }
         return buff.toString();
     }
@@ -812,6 +819,24 @@ public class Column {
         selectivity = source.selectivity;
         primaryKey = source.primaryKey;
         visible = source.visible;
+        mixedCaseName = source.mixedCaseName;
+        metaExtension = source.metaExtension;
+    }
+
+    public void setMetaExtension(String metaExtension) {
+        this.metaExtension = metaExtension;
+    }
+
+    public String getMetaExtension() {
+        return metaExtension;
+    }
+
+    public void setMixedCaseName(String mixedCaseName) {
+        this.mixedCaseName = mixedCaseName;
+    }
+
+    public String getMixedCaseName() {
+        return mixedCaseName ;
     }
 
 }

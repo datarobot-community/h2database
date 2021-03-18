@@ -26,6 +26,8 @@ public abstract class Expression {
 
     private boolean addedToFilter;
 
+    protected String columnMetaExtension;
+
     /**
      * Return the resulting value for the current row.
      *
@@ -96,6 +98,10 @@ public abstract class Expression {
      * @return the SQL statement
      */
     public abstract String getSQL();
+
+    public String getSQL(boolean withExtension) {
+        return getSQL();
+    }
 
     /**
      * Update an aggregate value. This method is called at statement execution
@@ -347,4 +353,19 @@ public abstract class Expression {
         }
     }
 
+    public String getMixedCaseName() {
+        return null;
+    }
+
+    public String getColumnMetaExtension() {
+        return columnMetaExtension;
+    }
+
+    public void setColumnMetaExtension(String columnMetaExtension) {
+        this.columnMetaExtension = columnMetaExtension;
+    }
+
+    public String getColumnLabel() {
+        return getAlias();
+    }
 }

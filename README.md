@@ -1,3 +1,5 @@
+**Please note:** The code in these repos is sourced from the DataRobot user community and is not owned or maintained by DataRobot, Inc. You may need to make edits or updates for this code to function properly in your environment.
+
 # Welcome to H2, the Java SQL database. [![CI](https://github.com/h2database/h2database/workflows/CI/badge.svg?event=push)](https://github.com/h2database/h2database/actions?query=workflow%3ACI)
 
 ## The main features of H2 are:
